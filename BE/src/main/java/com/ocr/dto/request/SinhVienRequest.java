@@ -1,6 +1,7 @@
 package com.ocr.dto.request;
 
 import com.ocr.entity.enums.GioiTinh;
+import com.ocr.entity.enums.TrangThaiSinhVienEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 
@@ -43,5 +44,18 @@ public record SinhVienRequest(
     @NotBlank(message = "Mã lớp không được để trống")
     @Size(max = 15, message = "Mã lớp tối đa 15 ký tự")
     @Schema(description = "Mã lớp sinh viên đang theo học (phải tồn tại trong bảng LOP)", example = "D24CQCE02-B")
-    String maLop
-) {}
+    String maLop,
+
+    @Schema(description = "Trạng thái học tập của sinh viên: DANG_HOC, BAO_LUU, TOT_NGHIEP, BUOC_THOI_HOC", example = "DANG_HOC")
+    TrangThaiSinhVienEnum trangThai
+) {
+    public SinhVienRequest {
+        if (trangThai == null) {
+            trangThai = TrangThaiSinhVienEnum.DANG_HOC;
+        }
+    }
+
+    public SinhVienRequest(String maSV, String hoTen, LocalDate ngaySinh, GioiTinh gioiTinh, String diaChi, String email, String soDienThoai, String maLop) {
+        this(maSV, hoTen, ngaySinh, gioiTinh, diaChi, email, soDienThoai, maLop, TrangThaiSinhVienEnum.DANG_HOC);
+    }
+}

@@ -1,5 +1,9 @@
 export type GioiTinh = "Nam" | "Nữ"
 
+export type TrangThaiSinhVien = "DANG_HOC" | "BAO_LUU" | "TOT_NGHIEP" | "BUOC_THOI_HOC"
+
+export type RoleEnum = "ADMIN" | "GIANGVIEN" | "SINHVIEN"
+
 export interface PageResponse<T> {
   content: T[]
   pageNo: number
@@ -19,6 +23,7 @@ export interface SinhVienRequest {
   email: string
   soDienThoai: string
   maLop: string
+  trangThai?: TrangThaiSinhVien
 }
 
 export interface SinhVienProfileUpdateRequest {
@@ -39,6 +44,7 @@ export interface SinhVienResponse {
   tenLop?: string
   maKhoa?: string
   tenKhoa?: string
+  trangThai?: TrangThaiSinhVien
 }
 
 export interface GetStudentsQuery {
@@ -200,4 +206,28 @@ export interface GiangVienResponse {
   soDienThoai: string
   maKhoa: string
   tenKhoa?: string
+}
+
+// ==================== TÀI KHOẢN & PHÂN QUYỀN ====================
+export interface TaiKhoanResponse {
+  id: number
+  username: string
+  role: RoleEnum
+  maSV?: string
+  maGV?: string
+  trangThai: boolean
+  createdAt: string
+}
+
+// ==================== PHÂN CÔNG GIẢNG DẠY ====================
+export interface PhanCongResponse {
+  maPC: number
+  maGV: string
+  hoTenGV?: string
+  maMH: string
+  tenMH?: string
+  maLop: string
+  tenLop?: string
+  maHK: string
+  tenHocKy?: string
 }

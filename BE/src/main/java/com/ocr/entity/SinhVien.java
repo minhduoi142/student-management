@@ -2,6 +2,7 @@ package com.ocr.entity;
 
 import com.ocr.entity.converter.GioiTinhConverter;
 import com.ocr.entity.enums.GioiTinh;
+import com.ocr.entity.enums.TrangThaiSinhVienEnum;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -63,6 +64,12 @@ public class SinhVien {
     @Column(name = "SoDienThoai", length = 15)
     @Size(max = 15, message = "Số điện thoại tối đa 15 ký tự")
     private String soDienThoai;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "TrangThai", length = 20, nullable = false)
+    @NotNull(message = "Trạng thái sinh viên không được để trống")
+    @Builder.Default
+    private TrangThaiSinhVienEnum trangThai = TrangThaiSinhVienEnum.DANG_HOC;
 
     // Quan hệ N - 1: Sinh viên thuộc 1 Lớp (bắt buộc)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

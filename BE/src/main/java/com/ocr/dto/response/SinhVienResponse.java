@@ -2,6 +2,7 @@ package com.ocr.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ocr.entity.SinhVien;
+import com.ocr.entity.enums.TrangThaiSinhVienEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDate;
@@ -40,8 +41,16 @@ public record SinhVienResponse(
     String maKhoa,
 
     @Schema(description = "Tên khoa quản lý", example = "Công nghệ Thông tin 1")
-    String tenKhoa
+    String tenKhoa,
+
+    @Schema(description = "Trạng thái học tập: DANG_HOC, BAO_LUU, TOT_NGHIEP, BUOC_THOI_HOC", example = "DANG_HOC")
+    TrangThaiSinhVienEnum trangThai
 ) {
+    public SinhVienResponse(String maSV, String hoTen, LocalDate ngaySinh, String gioiTinh, String diaChi,
+                            String email, String soDienThoai, String maLop, String tenLop, String maKhoa, String tenKhoa) {
+        this(maSV, hoTen, ngaySinh, gioiTinh, diaChi, email, soDienThoai, maLop, tenLop, maKhoa, tenKhoa, TrangThaiSinhVienEnum.DANG_HOC);
+    }
+
     public static SinhVienResponse fromEntity(SinhVien sv) {
         if (sv == null) {
             return null;
@@ -57,7 +66,8 @@ public record SinhVienResponse(
             sv.getLop() != null ? sv.getLop().getMaLop() : null,
             sv.getLop() != null ? sv.getLop().getTenLop() : null,
             sv.getLop() != null && sv.getLop().getKhoa() != null ? sv.getLop().getKhoa().getMaKhoa() : null,
-            sv.getLop() != null && sv.getLop().getKhoa() != null ? sv.getLop().getKhoa().getTenKhoa() : null
+            sv.getLop() != null && sv.getLop().getKhoa() != null ? sv.getLop().getKhoa().getTenKhoa() : null,
+            sv.getTrangThai() != null ? sv.getTrangThai() : TrangThaiSinhVienEnum.DANG_HOC
         );
     }
 }

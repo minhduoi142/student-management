@@ -69,6 +69,7 @@ public class SinhVienServiceImpl implements SinhVienService {
                 .email(request.email() != null && !request.email().trim().isEmpty() ? request.email().trim() : null)
                 .soDienThoai(request.soDienThoai() != null && !request.soDienThoai().trim().isEmpty() ? request.soDienThoai().trim() : null)
                 .lop(lop)
+                .trangThai(request.trangThai() != null ? request.trangThai() : com.ocr.entity.enums.TrangThaiSinhVienEnum.DANG_HOC)
                 .build();
 
         SinhVien saved = sinhVienRepository.save(sv);
@@ -97,6 +98,9 @@ public class SinhVienServiceImpl implements SinhVienService {
         sv.setEmail(request.email() != null && !request.email().trim().isEmpty() ? request.email().trim() : null);
         sv.setSoDienThoai(request.soDienThoai() != null && !request.soDienThoai().trim().isEmpty() ? request.soDienThoai().trim() : null);
         sv.setLop(lop);
+        if (request.trangThai() != null) {
+            sv.setTrangThai(request.trangThai());
+        }
 
         SinhVien updated = sinhVienRepository.save(sv);
         return SinhVienResponse.fromEntity(updated);
