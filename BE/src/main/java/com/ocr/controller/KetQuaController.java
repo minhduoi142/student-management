@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,19 +26,22 @@ public class KetQuaController {
     private final KetQuaService ketQuaService;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('GIANGVIEN') and @securityService.canTeacherGrade(authentication.name, #dto.maMH, #dto.maLop, #dto.maHK))")
     @Operation(summary = "Nhập hoặc cập nhật điểm học phần cho sinh viên (Câu 12, 14)",
                description = "Nhập hoặc sửa các thành phần điểm CC, GK, CK cho sinh viên theo môn và học kỳ. Điểm tổng kết được tự động tính: CC*0.1 + GK*0.3 + CK*0.6")
     @ApiResponses(value = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Lưu điểm thành công"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Điểm không trong khoảng 0.00 đến 10.00 hoặc dữ liệu không hợp lệ"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Không có quyền nhập điểm do chưa được phân công"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Không tìm thấy Sinh viên, Môn học hoặc Học kỳ tương ứng")
     })
-    public ResponseEntity<ApiResponse<KetQuaResponse>> saveOrUpdateDiem(@Valid @RequestBody KetQuaRequest request) {
-        KetQuaResponse data = ketQuaService.saveOrUpdateDiem(request);
+    public ResponseEntity<ApiResponse<KetQuaResponse>> saveOrUpdateDiem(@Valid @RequestBody KetQuaRequest dto) {
+        KetQuaResponse data = ketQuaService.saveOrUpdateDiem(dto);
         return ResponseEntity.ok(ApiResponse.success(data, "Lưu kết quả điểm thành công"));
     }
 
     @GetMapping("/sinh-vien/{maSV}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('GIANGVIEN') or (hasRole('SINHVIEN') and @securityService.isStudentOwner(#maSV))")
     @Operation(summary = "Tra cứu toàn bộ bảng điểm của một sinh viên (Câu 4, 5)",
                description = "Xem chi tiết bảng điểm các môn, tính điểm tổng kết từng môn, tổng tín chỉ tích lũy và điểm trung bình tích lũy hệ 10 (hỗ trợ lọc theo từng học kỳ)")
     public ResponseEntity<ApiResponse<BangDiemSinhVienResponse>> getBangDiemSinhVien(
@@ -49,6 +53,7 @@ public class KetQuaController {
     }
 
     @GetMapping("/mon-hoc/{maMH}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('GIANGVIEN')")
     @Operation(summary = "Tra cứu danh sách điểm sinh viên theo môn học",
                description = "Xem danh sách điểm của tất cả sinh viên đã học môn này (hỗ trợ lọc theo học kỳ)")
     public ResponseEntity<ApiResponse<List<KetQuaResponse>>> getDiemByMonHoc(
@@ -60,6 +65,7 @@ public class KetQuaController {
     }
 
     @DeleteMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Xóa một bản ghi điểm theo bộ ba khóa (MaSV, MaMH, MaHK)")
     public ResponseEntity<ApiResponse<Void>> deleteDiem(
             @Parameter(description = "Mã sinh viên", example = "B24DCCE001", required = true)

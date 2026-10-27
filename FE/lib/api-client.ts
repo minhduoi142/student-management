@@ -7,8 +7,6 @@ export interface ApiResponseEnvelope<T = any> {
   timestamp: string
 }
 
-// In the browser, use "/api/v1" so Next.js rewrites proxy to backend to avoid any CORS issues,
-// or fallback to direct URL http://localhost:8081/api/v1 if environment variable is set.
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   (typeof window !== "undefined" ? "/api/v1" : "http://localhost:8081/api/v1")
@@ -21,22 +19,80 @@ export const apiClient = axios.create({
   timeout: 15000,
 })
 
+let cachedToken: string | null = null
+let isLoggingIn = false
+let loginPromise: Promise<string | null> | null = null
+
+// Helper to auto-login as admin (admin / admin123) if Spring Boot security requires JWT
+async function getAdminToken(): Promise<string | null> {
+  if (cachedToken) return cachedToken
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("qlsv_token")
+    if (stored) {
+      cachedToken = stored
+      return stored
+    }
+  }
+
+  if (isLoggingIn && loginPromise) {
+    return loginPromise
+  }
+
+  isLoggingIn = true
+  loginPromise = (async () => {
+    try {
+      // Use direct URL or relative /api/v1/auth/login
+      const targetUrl =
+        typeof window !== "undefined"
+          ? "/api/v1/auth/login"
+          : "http://localhost:8081/api/v1/auth/login"
+
+      const res = await axios.post(
+        targetUrl,
+        { username: "admin", password: "admin123" },
+        { timeout: 4000 }
+      )
+      const token = res.data?.data?.accessToken || res.data?.data?.token
+      if (token) {
+        cachedToken = token
+        if (typeof window !== "undefined") {
+          localStorage.setItem("qlsv_token", token)
+        }
+        return token
+      }
+    } catch {
+      // Ignore if backend doesn't require auth or login fails
+    } finally {
+      isLoggingIn = false
+    }
+    return null
+  })()
+
+  return loginPromise
+}
+
+// Request interceptor: attach Bearer token if available
+apiClient.interceptors.request.use(async (config) => {
+  const token = await getAdminToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
 // Response interceptor: automatically extract `data` from `{ success, message, data, timestamp }`
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     const resBody = response.data
 
-    // Check if the response follows the backend envelope format
     if (resBody && typeof resBody === "object" && "data" in resBody) {
       const extracted = resBody.data
       const message = resBody.message
 
-      // If data is null or undefined (e.g. ApiResponse<Void>), return an object with _message
       if (extracted === null || extracted === undefined) {
         return { _message: message, success: resBody.success ?? true }
       }
 
-      // If extracted is an object (not primitive, not array), attach _message as non-enumerable
       if (typeof extracted === "object" && !Array.isArray(extracted)) {
         try {
           Object.defineProperty(extracted, "_message", {
@@ -54,7 +110,15 @@ apiClient.interceptors.response.use(
 
     return resBody
   },
-  (error: AxiosError<any>) => {
+  async (error: AxiosError<any>) => {
+    // If 401 Unauthorized, clear cached token so next request re-authenticates
+    if (error.response?.status === 401) {
+      cachedToken = null
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("qlsv_token")
+      }
+    }
+
     const errorData = error.response?.data
     let backendMessage =
       errorData?.message ||

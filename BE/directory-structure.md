@@ -1,11 +1,11 @@
 # Project Directory Structure
 
-*Generated: 2026-10-27 00:02:36*
+*Generated: 2026-10-27 10:25:20*
 
-Summary: 59 directories, 201 files, 0 Python files
+Summary: 65 directories, 261 files, 0 Python files
 
 ```
-+ **QLSV**
++ **BE**
     + **src**
         + **main**
             + **java**
@@ -22,6 +22,8 @@ Summary: 59 directories, 201 files, 0 Python files
                             + **id**
                         + **exception**
                         + **repository**
+                        + **security**
+                            + **jwt**
                         + **service**
                             + **impl**
             + **resources**
@@ -31,6 +33,7 @@ Summary: 59 directories, 201 files, 0 Python files
             + **java**
                 + **com**
                     + **ocr**
+                        + **security**
                         + **service**
     + **target**
         + **classes**
@@ -49,6 +52,8 @@ Summary: 59 directories, 201 files, 0 Python files
                         + **id**
                     + **exception**
                     + **repository**
+                    + **security**
+                        + **jwt**
                     + **service**
                         + **impl**
         + **generated-sources**
@@ -63,5 +68,6 @@ Summary: 59 directories, 201 files, 0 Python files
         + **test-classes**
             + **com**
                 + **ocr**
+                    + **security**
                     + **service**
 ```

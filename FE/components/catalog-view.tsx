@@ -5,11 +5,15 @@ import { useRouter } from "next/navigation"
 import {
   BookOpen,
   CalendarDays,
+  CheckCircle2,
+  HelpCircle,
   Landmark,
   Layers3,
   Loader2,
+  Mail,
   MoreHorizontal,
   Pencil,
+  Phone,
   Plus,
   RotateCcw,
   Search,
@@ -19,22 +23,45 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import { toast } from "sonner"
-import { useAcademicData } from "@/components/academic-data-provider"
-import { PageHeading, Pagination, RequestBadge } from "@/components/admin-ui"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { InitialAvatar, PageHeading, Pagination, RequestBadge } from "@/components/admin-ui"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { catalogService } from "@/services"
+import { catalogService, statService } from "@/services"
 import type { CatalogResource } from "@/components/academic-data-provider"
+import { useAcademicData } from "@/components/academic-data-provider"
 import { getErrorMessage, getSuccessMessage } from "@/lib/api-client"
+import type { DiemTrungBinhMonResponse, MonHocResponse, ThongKeHocKyResponse } from "@/services/types"
 
 const pageSize = 8
 
@@ -46,15 +73,12 @@ type CatalogField = {
   options?: { value: string; label: string }[]
 }
 
-type CatalogColumn = { key: string; label: string }
-
 const catalogConfig: Record<
   CatalogResource,
   {
     title: string
     description: string
     primaryKey: string
-    columns: CatalogColumn[]
     fields: Omit<CatalogField, "options">[]
   }
 > = {
@@ -62,13 +86,6 @@ const catalogConfig: Record<
     title: "Lớp học",
     description: "Quản lý lớp, khóa tuyển sinh, khoa phụ trách và cố vấn học tập.",
     primaryKey: "maLop",
-    columns: [
-      { key: "maLop", label: "Mã lớp" },
-      { key: "tenLop", label: "Tên lớp" },
-      { key: "khoaHoc", label: "Khóa" },
-      { key: "maKhoa", label: "Khoa" },
-      { key: "maGVCoVan", label: "Cố vấn học tập" },
-    ],
     fields: [
       { key: "maLop", label: "Mã lớp", placeholder: "Ví dụ: D24CQCE02-B" },
       { key: "tenLop", label: "Tên lớp", placeholder: "Kỹ thuật máy tính 02" },
@@ -78,27 +95,18 @@ const catalogConfig: Record<
     ],
   },
   khoa: {
-    title: "Khoa",
-    description: "Danh mục đơn vị đào tạo và mã khoa đang quản lý sinh viên.",
+    title: "Khoa đào tạo",
+    description: "Danh mục các đơn vị đào tạo, viện và khoa chuyên môn quản lý sinh viên.",
     primaryKey: "maKhoa",
-    columns: [
-      { key: "maKhoa", label: "Mã khoa" },
-      { key: "tenKhoa", label: "Tên khoa" },
-    ],
     fields: [
       { key: "maKhoa", label: "Mã khoa", placeholder: "Ví dụ: CNTT" },
       { key: "tenKhoa", label: "Tên khoa", placeholder: "Công nghệ thông tin 1" },
     ],
   },
   "mon-hoc": {
-    title: "Môn học",
-    description: "Danh mục học phần và số tín chỉ trong chương trình đào tạo.",
+    title: "Môn học & Học phần",
+    description: "Danh mục học phần đào tạo, số tín chỉ và theo dõi kết quả thi kết thúc môn.",
     primaryKey: "maMH",
-    columns: [
-      { key: "maMH", label: "Mã môn" },
-      { key: "tenMH", label: "Tên môn học" },
-      { key: "soTinChi", label: "Tín chỉ" },
-    ],
     fields: [
       { key: "maMH", label: "Mã môn học", placeholder: "Ví dụ: INT1313" },
       { key: "tenMH", label: "Tên môn học", placeholder: "Cơ sở dữ liệu" },
@@ -107,15 +115,8 @@ const catalogConfig: Record<
   },
   "giang-vien": {
     title: "Giảng viên",
-    description: "Thông tin liên hệ và khoa công tác của đội ngũ giảng viên.",
+    description: "Hồ sơ liên hệ, khoa chuyên môn và nhiệm vụ cố vấn học tập của giảng viên.",
     primaryKey: "maGV",
-    columns: [
-      { key: "maGV", label: "Mã giảng viên" },
-      { key: "hoTen", label: "Họ và tên" },
-      { key: "email", label: "Email" },
-      { key: "soDienThoai", label: "Điện thoại" },
-      { key: "maKhoa", label: "Khoa" },
-    ],
     fields: [
       { key: "maGV", label: "Mã giảng viên", placeholder: "Ví dụ: GV01" },
       { key: "hoTen", label: "Họ và tên", placeholder: "TS. Nguyễn Văn A" },
@@ -125,15 +126,9 @@ const catalogConfig: Record<
     ],
   },
   "hoc-ky": {
-    title: "Học kỳ",
-    description: "Thiết lập mã học kỳ, năm học và kỳ đào tạo để liên kết kết quả.",
+    title: "Học kỳ & Năm học",
+    description: "Thiết lập các mốc học kỳ, năm học và thống kê tiến độ chấm điểm học vụ.",
     primaryKey: "maHK",
-    columns: [
-      { key: "maHK", label: "Mã học kỳ" },
-      { key: "tenHocKy", label: "Tên học kỳ" },
-      { key: "namHoc", label: "Năm học" },
-      { key: "ky", label: "Kỳ" },
-    ],
     fields: [
       { key: "maHK", label: "Mã học kỳ", placeholder: "Ví dụ: 2025-1" },
       { key: "namHoc", label: "Năm học (yyyy-yyyy)", placeholder: "2025-2026" },
@@ -143,11 +138,11 @@ const catalogConfig: Record<
 }
 
 const catalogTabs: { key: CatalogResource; label: string; icon: LucideIcon }[] = [
-  { key: "lop", label: "Lớp học", icon: Layers3 },
   { key: "khoa", label: "Khoa", icon: Landmark },
   { key: "mon-hoc", label: "Môn học", icon: BookOpen },
   { key: "giang-vien", label: "Giảng viên", icon: UserRound },
   { key: "hoc-ky", label: "Học kỳ", icon: CalendarDays },
+  { key: "lop", label: "Lớp học", icon: Layers3 },
 ]
 
 function readRecord(record: any, key: string): string | number {
@@ -228,7 +223,6 @@ function CatalogFormDialog({
     event.preventDefault()
     const nextErrors: Record<string, string> = {}
     fields.forEach((field) => {
-      // maGVCoVan can be optional
       if (field.key === "maGVCoVan") return
 
       const value = values[field.key]?.trim() ?? ""
@@ -404,7 +398,7 @@ function CatalogFormDialog({
 
 export function CatalogView({ resource }: { resource: CatalogResource }) {
   const router = useRouter()
-  const { faculties, lecturers, refreshCatalogs } = useAcademicData()
+  const { faculties, lecturers, classes, refreshCatalogs } = useAcademicData()
   const config = catalogConfig[resource]
   const fields = useMemo(() => getCatalogFields(resource, faculties, lecturers), [resource, faculties, lecturers])
 
@@ -418,8 +412,43 @@ export function CatalogView({ resource }: { resource: CatalogResource }) {
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null)
   const [deleting, setDeleting] = useState(false)
 
+  // Extra insight stats
+  const [courseAverages, setCourseAverages] = useState<Map<string, number>>(new Map())
+  const [noGradeCourseCodes, setNoGradeCourseCodes] = useState<Set<string>>(new Set())
+  const [semesterGradeCounts, setSemesterGradeCounts] = useState<Map<string, number>>(new Map())
+
   const facultyNameByCode = useMemo(() => new Map(faculties.map((f) => [f.maKhoa, f.tenKhoa])), [faculties])
   const lecturerNameByCode = useMemo(() => new Map(lecturers.map((l) => [l.maGV, l.hoTen])), [lecturers])
+
+  // Count classes and lecturers per faculty
+  const classCountByFaculty = useMemo(() => {
+    const map = new Map<string, number>()
+    classes.forEach((c) => {
+      map.set(c.maKhoa, (map.get(c.maKhoa) || 0) + 1)
+    })
+    return map
+  }, [classes])
+
+  const lecturerCountByFaculty = useMemo(() => {
+    const map = new Map<string, number>()
+    lecturers.forEach((l) => {
+      map.set(l.maKhoa, (map.get(l.maKhoa) || 0) + 1)
+    })
+    return map
+  }, [lecturers])
+
+  // Advised classes per lecturer
+  const advisedClassesByLecturer = useMemo(() => {
+    const map = new Map<string, string[]>()
+    classes.forEach((c) => {
+      if (c.maGVCoVan) {
+        const list = map.get(c.maGVCoVan) || []
+        list.push(c.maLop)
+        map.set(c.maGVCoVan, list)
+      }
+    })
+    return map
+  }, [classes])
 
   const fetchCatalogData = useCallback(async () => {
     setLoading(true)
@@ -430,11 +459,39 @@ export function CatalogView({ resource }: { resource: CatalogResource }) {
       } else if (resource === "khoa") {
         data = await catalogService.getAllKhoa()
       } else if (resource === "mon-hoc") {
-        data = await catalogService.getAllMonHoc()
+        const [monHocList, avgRes, noGradeRes] = await Promise.allSettled([
+          catalogService.getAllMonHoc(),
+          statService.getDiemTrungBinhMon(),
+          statService.getMonHocChuaCoKetQua(),
+        ])
+        data = monHocList.status === "fulfilled" ? monHocList.value || [] : []
+
+        if (avgRes.status === "fulfilled" && avgRes.value) {
+          const map = new Map<string, number>()
+          avgRes.value.forEach((item) => {
+            map.set(item.maMH, item.diemCKTrungBinh)
+          })
+          setCourseAverages(map)
+        }
+        if (noGradeRes.status === "fulfilled" && noGradeRes.value) {
+          setNoGradeCourseCodes(new Set(noGradeRes.value.map((m) => m.maMH)))
+        }
       } else if (resource === "giang-vien") {
         data = await catalogService.getAllGiangVien(facultyFilter === "all" ? undefined : facultyFilter)
       } else if (resource === "hoc-ky") {
-        data = await catalogService.getAllHocKy()
+        const [hocKyList, statRes] = await Promise.allSettled([
+          catalogService.getAllHocKy(),
+          statService.getSoLuongDiemTheoHocKy(),
+        ])
+        data = hocKyList.status === "fulfilled" ? hocKyList.value || [] : []
+
+        if (statRes.status === "fulfilled" && statRes.value) {
+          const countMap = new Map<string, number>()
+          statRes.value.forEach((item) => {
+            countMap.set(item.maHK, item.soLuongKetQua)
+          })
+          setSemesterGradeCounts(countMap)
+        }
       }
       setRows(data || [])
     } catch (err) {
@@ -467,15 +524,6 @@ export function CatalogView({ resource }: { resource: CatalogResource }) {
   const pageNo = Math.min(Math.max(1, page), Math.max(1, totalPages))
   const start = (pageNo - 1) * pageSize
   const pageContent = filteredRows.slice(start, start + pageSize)
-
-  const displayValue = (record: any, key: string) => {
-    const value = readRecord(record, key)
-    if (key === "maKhoa") return facultyNameByCode.get(String(value)) ?? String(value)
-    if (key === "maGVCoVan") return lecturerNameByCode.get(String(value)) ?? (value ? String(value) : "—")
-    if (key === "soTinChi") return `${value} tín chỉ`
-    if (key === "ky") return `Học kỳ ${value}`
-    return String(value || "—")
-  }
 
   const handleDelete = async () => {
     if (!deleteTarget) return
@@ -515,24 +563,40 @@ export function CatalogView({ resource }: { resource: CatalogResource }) {
   return (
     <div className="animate-in fade-in-0 duration-300">
       <PageHeading
-        eyebrow="Danh mục đào tạo"
+        eyebrow="Quản trị · Danh mục hệ thống"
         title={config.title}
         description={config.description}
         actions={<RequestBadge>GET /api/v1/{resource}</RequestBadge>}
       />
 
-      <Tabs value={resource} onValueChange={(value) => router.push(`/${value}`)}>
+      <Tabs
+        value={resource}
+        onValueChange={(value) => {
+          if (value === "lop") {
+            router.push("/lop")
+          } else {
+            router.push(`/${value}`)
+          }
+        }}
+      >
         <TabsList className="flex h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl p-1 md:w-fit">
           {catalogTabs.map((tab) => {
             const Icon = tab.icon
+            const isLop = tab.key === "lop"
             return (
-              <TabsTrigger key={tab.key} value={tab.key} className="shrink-0 gap-2 px-3 py-2">
-                <Icon />
+              <TabsTrigger key={tab.key} value={tab.key} className="shrink-0 gap-2 px-3.5 py-2">
+                <Icon className="size-4" />
                 {tab.label}
+                {isLop ? (
+                  <Badge variant="outline" className="ml-1 text-[10px] uppercase tracking-wider text-primary">
+                    Mới
+                  </Badge>
+                ) : null}
               </TabsTrigger>
             )
           })}
         </TabsList>
+
         <TabsContent value={resource} className="mt-5">
           <section aria-label={`Tóm tắt ${config.title.toLocaleLowerCase("vi-VN")}`} className="mb-4 grid gap-3 sm:grid-cols-3">
             <Card>
@@ -542,7 +606,7 @@ export function CatalogView({ resource }: { resource: CatalogResource }) {
                 </span>
                 <div>
                   <p className="text-xl font-semibold tabular-nums">{loading ? "..." : rows.length}</p>
-                  <p className="text-xs text-muted-foreground">Tổng danh mục</p>
+                  <p className="text-xs text-muted-foreground">Tổng bản ghi trong danh mục</p>
                 </div>
               </CardContent>
             </Card>
@@ -553,7 +617,7 @@ export function CatalogView({ resource }: { resource: CatalogResource }) {
                 </span>
                 <div>
                   <p className="text-xl font-semibold tabular-nums">{filteredRows.length}</p>
-                  <p className="text-xs text-muted-foreground">Khớp bộ lọc</p>
+                  <p className="text-xs text-muted-foreground">Khớp kết quả tìm kiếm</p>
                 </div>
               </CardContent>
             </Card>
@@ -564,7 +628,7 @@ export function CatalogView({ resource }: { resource: CatalogResource }) {
                 </span>
                 <div>
                   <p className="text-xl font-semibold tabular-nums">{pageContent.length}</p>
-                  <p className="text-xs text-muted-foreground">Đang hiển thị trên trang</p>
+                  <p className="text-xs text-muted-foreground">Bản ghi hiển thị trên trang</p>
                 </div>
               </CardContent>
             </Card>
@@ -588,12 +652,12 @@ export function CatalogView({ resource }: { resource: CatalogResource }) {
                       setKeyword(event.target.value)
                       setPage(1)
                     }}
-                    placeholder={`Tìm trong ${config.title.toLocaleLowerCase("vi-VN")}...`}
+                    placeholder={`Tìm kiếm trong ${config.title.toLocaleLowerCase("vi-VN")}...`}
                     className="pl-10"
                   />
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                  {resource === "lop" || resource === "giang-vien" ? (
+                  {resource === "giang-vien" ? (
                     <>
                       <label htmlFor="catalog-faculty-filter" className="sr-only">
                         Lọc theo khoa
@@ -637,93 +701,423 @@ export function CatalogView({ resource }: { resource: CatalogResource }) {
                   </Button>
                 </div>
               </div>
+
+              {/* Table Rendering Based on Resource */}
               <div className="overflow-x-auto">
-                <Table className="min-w-[760px]">
-                  <TableHeader>
-                    <TableRow className="bg-muted/40 hover:bg-muted/40">
-                      {config.columns.map((column) => (
-                        <TableHead key={column.key}>{column.label}</TableHead>
-                      ))}
-                      <TableHead className="w-[58px] text-right">Thao tác</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loading ? (
-                      <TableRow>
-                        <TableCell colSpan={config.columns.length + 1} className="h-40 text-center">
-                          <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                            <Loader2 className="size-5 animate-spin" />
-                            <span>Đang tải danh mục...</span>
-                          </div>
-                        </TableCell>
+                {resource === "khoa" ? (
+                  <Table className="min-w-[700px]">
+                    <TableHeader>
+                      <TableRow className="bg-muted/40 hover:bg-muted/40">
+                        <TableHead className="w-[140px]">Mã khoa</TableHead>
+                        <TableHead className="w-[300px]">Tên khoa</TableHead>
+                        <TableHead className="w-[160px]">Lớp trực thuộc</TableHead>
+                        <TableHead className="w-[160px]">Giảng viên</TableHead>
+                        <TableHead className="w-[60px] text-right">Thao tác</TableHead>
                       </TableRow>
-                    ) : pageContent.length ? (
-                      pageContent.map((record) => {
-                        const rowCode = String(readRecord(record, config.primaryKey))
-                        return (
-                          <TableRow key={rowCode}>
-                            {config.columns.map((column, index) => (
-                              <TableCell
-                                key={column.key}
-                                className={index === 0 ? "font-mono text-xs font-medium" : undefined}
-                              >
-                                {column.key === config.primaryKey ? (
-                                  <Badge variant="outline" className="font-mono text-[11px]">
-                                    {displayValue(record, column.key)}
-                                  </Badge>
+                    </TableHeader>
+                    <TableBody>
+                      {loading ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="h-40 text-center">
+                            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                              <Loader2 className="size-5 animate-spin" />
+                              <span>Đang tải danh sách khoa...</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : pageContent.length ? (
+                        pageContent.map((f: any) => {
+                          const lopCount = classCountByFaculty.get(f.maKhoa) || 0
+                          const gvCount = lecturerCountByFaculty.get(f.maKhoa) || 0
+                          return (
+                            <TableRow key={f.maKhoa} className="hover:bg-muted/30">
+                              <TableCell>
+                                <Badge variant="outline" className="font-mono text-xs font-semibold">
+                                  {f.maKhoa}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-medium text-foreground">{f.tenKhoa}</TableCell>
+                              <TableCell>
+                                <span className="inline-flex items-center gap-1.5 text-sm">
+                                  <Layers3 className="size-3.5 text-muted-foreground" />
+                                  <span className="font-semibold">{lopCount}</span> lớp học
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                <span className="inline-flex items-center gap-1.5 text-sm">
+                                  <UserRound className="size-3.5 text-muted-foreground" />
+                                  <span className="font-semibold">{gvCount}</span> giảng viên
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger
+                                    render={
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        aria-label={`Thao tác với khoa ${f.tenKhoa}`}
+                                      />
+                                    }
+                                  >
+                                    <MoreHorizontal />
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-44">
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedRecord(f)
+                                        setDialogOpen(true)
+                                      }}
+                                    >
+                                      <Pencil data-icon="inline-start" />
+                                      Chỉnh sửa
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(f)}>
+                                      <Trash2 data-icon="inline-start" />
+                                      Xóa khoa
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="h-40 text-center text-sm text-muted-foreground">
+                            Không tìm thấy khoa nào phù hợp.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                ) : resource === "mon-hoc" ? (
+                  <Table className="min-w-[850px]">
+                    <TableHeader>
+                      <TableRow className="bg-muted/40 hover:bg-muted/40">
+                        <TableHead className="w-[140px]">Mã môn</TableHead>
+                        <TableHead className="w-[300px]">Tên môn học</TableHead>
+                        <TableHead className="w-[120px]">Tín chỉ</TableHead>
+                        <TableHead className="w-[180px]">Điểm CK trung bình</TableHead>
+                        <TableHead className="w-[160px]">Trạng thái kết quả</TableHead>
+                        <TableHead className="w-[60px] text-right">Thao tác</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {loading ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-40 text-center">
+                            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                              <Loader2 className="size-5 animate-spin" />
+                              <span>Đang tải danh sách môn học...</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : pageContent.length ? (
+                        pageContent.map((mh: any) => {
+                          const avgCK = courseAverages.get(mh.maMH)
+                          const isNoGrade = noGradeCourseCodes.has(mh.maMH)
+
+                          return (
+                            <TableRow key={mh.maMH} className="hover:bg-muted/30">
+                              <TableCell>
+                                <Badge variant="outline" className="font-mono text-xs font-semibold">
+                                  {mh.maMH}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-medium text-foreground">{mh.tenMH}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" className="font-mono">
+                                  {mh.soTinChi} TC
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {avgCK !== undefined ? (
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`inline-flex items-center rounded-md px-2 py-0.5 font-mono text-xs font-bold ${
+                                        avgCK >= 8.0
+                                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                          : avgCK >= 6.5
+                                            ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                                            : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                                      }`}
+                                    >
+                                      {avgCK.toFixed(2)}
+                                    </span>
+                                    <span className="text-[11px] text-muted-foreground">điểm TB</span>
+                                  </div>
                                 ) : (
-                                  displayValue(record, column.key)
+                                  <span className="text-xs text-muted-foreground">—</span>
                                 )}
                               </TableCell>
-                            ))}
-                            <TableCell className="text-right">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger
-                                  render={
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      aria-label={`Thao tác với ${rowCode}`}
-                                    />
-                                  }
-                                >
-                                  <MoreHorizontal />
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-44">
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      setSelectedRecord(record)
-                                      setDialogOpen(true)
-                                    }}
+                              <TableCell>
+                                {isNoGrade ? (
+                                  <Badge
+                                    variant="outline"
+                                    className="border-amber-300 bg-amber-50 text-[11px] text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
                                   >
-                                    <Pencil data-icon="inline-start" />
-                                    Chỉnh sửa
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    variant="destructive"
-                                    onClick={() => setDeleteTarget(record)}
+                                    Chưa có điểm
+                                  </Badge>
+                                ) : (
+                                  <Badge
+                                    variant="secondary"
+                                    className="border-emerald-200 bg-emerald-50 text-[11px] text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
                                   >
-                                    <Trash2 data-icon="inline-start" />
-                                    Xóa danh mục
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={config.columns.length + 1} className="h-40 text-center text-sm text-muted-foreground">
-                          Không tìm thấy bản ghi phù hợp.
-                        </TableCell>
+                                    <CheckCircle2 className="mr-1 size-3" />
+                                    Đã đánh giá
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger
+                                    render={
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        aria-label={`Thao tác với môn ${mh.tenMH}`}
+                                      />
+                                    }
+                                  >
+                                    <MoreHorizontal />
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-44">
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedRecord(mh)
+                                        setDialogOpen(true)
+                                      }}
+                                    >
+                                      <Pencil data-icon="inline-start" />
+                                      Chỉnh sửa
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(mh)}>
+                                      <Trash2 data-icon="inline-start" />
+                                      Xóa môn học
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-40 text-center text-sm text-muted-foreground">
+                            Không tìm thấy môn học nào phù hợp.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                ) : resource === "giang-vien" ? (
+                  <Table className="min-w-[900px]">
+                    <TableHeader>
+                      <TableRow className="bg-muted/40 hover:bg-muted/40">
+                        <TableHead className="w-[240px]">Giảng viên</TableHead>
+                        <TableHead className="w-[120px]">Mã GV</TableHead>
+                        <TableHead className="w-[200px]">Khoa công tác</TableHead>
+                        <TableHead className="w-[200px]">Email</TableHead>
+                        <TableHead className="w-[130px]">Điện thoại</TableHead>
+                        <TableHead className="w-[160px]">Lớp cố vấn</TableHead>
+                        <TableHead className="w-[60px] text-right">Thao tác</TableHead>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {loading ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="h-40 text-center">
+                            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                              <Loader2 className="size-5 animate-spin" />
+                              <span>Đang tải danh sách giảng viên...</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : pageContent.length ? (
+                        pageContent.map((gv: any) => {
+                          const facultyName = facultyNameByCode.get(gv.maKhoa) || gv.maKhoa
+                          const advised = advisedClassesByLecturer.get(gv.maGV) || []
+
+                          return (
+                            <TableRow key={gv.maGV} className="hover:bg-muted/30">
+                              <TableCell>
+                                <div className="flex items-center gap-2.5">
+                                  <InitialAvatar name={gv.hoTen} className="size-9" />
+                                  <span className="font-medium text-foreground">{gv.hoTen}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="font-mono text-xs font-semibold">
+                                  {gv.maGV}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-sm font-medium">{facultyName}</TableCell>
+                              <TableCell className="text-xs font-mono text-muted-foreground">
+                                <a href={`mailto:${gv.email}`} className="hover:text-primary hover:underline">
+                                  {gv.email}
+                                </a>
+                              </TableCell>
+                              <TableCell className="tabular-nums text-xs font-mono">{gv.soDienThoai}</TableCell>
+                              <TableCell>
+                                {advised.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    {advised.map((cls) => (
+                                      <Badge key={cls} variant="secondary" className="font-mono text-[11px]">
+                                        {cls}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">Chưa cố vấn</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger
+                                    render={
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        aria-label={`Thao tác với giảng viên ${gv.hoTen}`}
+                                      />
+                                    }
+                                  >
+                                    <MoreHorizontal />
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-44">
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedRecord(gv)
+                                        setDialogOpen(true)
+                                      }}
+                                    >
+                                      <Pencil data-icon="inline-start" />
+                                      Chỉnh sửa
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(gv)}>
+                                      <Trash2 data-icon="inline-start" />
+                                      Xóa giảng viên
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={7} className="h-40 text-center text-sm text-muted-foreground">
+                            Không tìm thấy giảng viên nào phù hợp.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                ) : resource === "hoc-ky" ? (
+                  <Table className="min-w-[700px]">
+                    <TableHeader>
+                      <TableRow className="bg-muted/40 hover:bg-muted/40">
+                        <TableHead className="w-[140px]">Mã học kỳ</TableHead>
+                        <TableHead className="w-[260px]">Tên học kỳ</TableHead>
+                        <TableHead className="w-[180px]">Năm học</TableHead>
+                        <TableHead className="w-[120px]">Kỳ đào tạo</TableHead>
+                        <TableHead className="w-[180px]">Số điểm đã chấm</TableHead>
+                        <TableHead className="w-[60px] text-right">Thao tác</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {loading ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-40 text-center">
+                            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                              <Loader2 className="size-5 animate-spin" />
+                              <span>Đang tải danh sách học kỳ...</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : pageContent.length ? (
+                        pageContent.map((hk: any) => {
+                          const count = semesterGradeCounts.get(hk.maHK)
+
+                          return (
+                            <TableRow key={hk.maHK} className="hover:bg-muted/30">
+                              <TableCell>
+                                <Badge variant="outline" className="font-mono text-xs font-semibold">
+                                  {hk.maHK}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-medium text-foreground">
+                                {hk.tenHocKy || `Học kỳ ${hk.ky} (${hk.namHoc})`}
+                              </TableCell>
+                              <TableCell className="font-mono text-sm">{hk.namHoc}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary">Kỳ {hk.ky}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                {count !== undefined ? (
+                                  <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold">
+                                    <Badge variant="outline" className="bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300">
+                                      {count} bài đã chấm
+                                    </Badge>
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger
+                                    render={
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        aria-label={`Thao tác với học kỳ ${hk.maHK}`}
+                                      />
+                                    }
+                                  >
+                                    <MoreHorizontal />
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-44">
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedRecord(hk)
+                                        setDialogOpen(true)
+                                      }}
+                                    >
+                                      <Pencil data-icon="inline-start" />
+                                      Chỉnh sửa
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(hk)}>
+                                      <Trash2 data-icon="inline-start" />
+                                      Xóa học kỳ
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-40 text-center text-sm text-muted-foreground">
+                            Không tìm thấy học kỳ nào phù hợp.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                ) : null}
               </div>
+
               <Pagination
                 pageNo={pageNo}
                 pageSize={pageSize}
@@ -744,6 +1138,7 @@ export function CatalogView({ resource }: { resource: CatalogResource }) {
         fields={fields}
         onSaved={handleSaved}
       />
+
       <AlertDialog
         open={Boolean(deleteTarget)}
         onOpenChange={(open) => {
@@ -758,14 +1153,14 @@ export function CatalogView({ resource }: { resource: CatalogResource }) {
               <span className="font-medium text-foreground">
                 {deleteTarget ? String(readRecord(deleteTarget, config.primaryKey)) : ""}
               </span>
-              . Lưu ý: Bản ghi đang được tham chiếu bởi sinh viên, lớp, giảng viên hoặc điểm sẽ bị từ chối xóa bởi hệ thống cơ sở dữ liệu.
+              . Thao tác này sẽ xóa bản ghi khỏi hệ thống nếu không còn ràng buộc dữ liệu khóa ngoại.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Hủy</AlertDialogCancel>
             <AlertDialogAction variant="destructive" onClick={handleDelete} disabled={deleting}>
               {deleting ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-              Xóa danh mục
+              Xóa bản ghi
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

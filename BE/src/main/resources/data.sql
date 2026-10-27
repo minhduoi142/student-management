@@ -1,5 +1,5 @@
 -- =====================================================================
--- Dữ liệu mẫu ban đầu cho Phase 1: KHOA, MONHOC, HOCKY
+-- Dữ liệu mẫu ban đầu: KHOA, MONHOC, HOCKY, TAIKHOAN (ADMIN)
 -- =====================================================================
 
 -- 1. Bảng KHOA
@@ -29,3 +29,8 @@ INSERT INTO HOCKY (MaHK, NamHoc, Ky) VALUES
 ('2025-1', '2025-2026', 1),
 ('2025-2', '2025-2026', 2)
 ON DUPLICATE KEY UPDATE NamHoc = VALUES(NamHoc), Ky = VALUES(Ky);
+
+-- 4. Bảng TAIKHOAN (Tài khoản Quản trị viên ADMIN mặc định: admin / admin123)
+INSERT INTO TAIKHOAN (Username, Password, Role, MaSV, MaGV, TrangThai, CreatedAt) VALUES
+('admin', '$2a$10$TDDXAPoO2rsQc6FzJJW6/OxL9M24roJKYlyr800G5SC6vqUzwlvCO', 'ADMIN', NULL, NULL, TRUE, CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE Password = VALUES(Password), Role = VALUES(Role), TrangThai = VALUES(TrangThai);

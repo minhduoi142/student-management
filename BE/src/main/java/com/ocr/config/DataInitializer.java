@@ -2,14 +2,18 @@ package com.ocr.config;
 
 import com.ocr.entity.*;
 import com.ocr.entity.enums.GioiTinh;
+import com.ocr.entity.enums.RoleEnum;
+import com.ocr.entity.enums.TrangThaiSinhVienEnum;
 import com.ocr.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -24,6 +28,9 @@ public class DataInitializer implements CommandLineRunner {
     private final MonHocRepository monHocRepository;
     private final HocKyRepository hocKyRepository;
     private final KetQuaRepository ketQuaRepository;
+    private final TaiKhoanRepository taiKhoanRepository;
+    private final PhanCongRepository phanCongRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) {
@@ -34,6 +41,8 @@ public class DataInitializer implements CommandLineRunner {
         seedMonHoc();
         seedHocKy();
         seedKetQua();
+        seedTaiKhoan();
+        seedPhanCong();
     }
 
     private void seedKhoa() {
@@ -107,11 +116,11 @@ public class DataInitializer implements CommandLineRunner {
 
             if (ce02 != null && cn01 != null && vt01 != null) {
                 List<SinhVien> sinhViens = List.of(
-                        SinhVien.builder().maSV("B24DCCE001").hoTen("Nguyễn Hoàng Nam").ngaySinh(LocalDate.of(2006, 3, 15)).gioiTinh(GioiTinh.NAM).diaChi("Hà Nội").email("nam.nh@qlsv.edu.vn").soDienThoai("0981112233").lop(ce02).build(),
-                        SinhVien.builder().maSV("B24DCCE002").hoTen("Trần Thị Mai Lan").ngaySinh(LocalDate.of(2006, 8, 20)).gioiTinh(GioiTinh.NU).diaChi("Hải Phòng").email("lan.ttm@qlsv.edu.vn").soDienThoai("0982223344").lop(ce02).build(),
-                        SinhVien.builder().maSV("B24DCCN001").hoTen("Lê Văn Hùng").ngaySinh(LocalDate.of(2006, 11, 5)).gioiTinh(GioiTinh.NAM).diaChi("Đà Nẵng").email("hung.lv@qlsv.edu.vn").soDienThoai("0983334455").lop(cn01).build(),
-                        SinhVien.builder().maSV("B24DCCN002").hoTen("Phạm Thu Thảo").ngaySinh(LocalDate.of(2006, 1, 10)).gioiTinh(GioiTinh.NU).diaChi("Nam Định").email("thao.pt@qlsv.edu.vn").soDienThoai("0984445566").lop(cn01).build(),
-                        SinhVien.builder().maSV("B24DCVT001").hoTen("Vũ Đình Khoa").ngaySinh(LocalDate.of(2006, 5, 12)).gioiTinh(GioiTinh.NAM).diaChi("Quảng Ninh").email("khoa.vd@qlsv.edu.vn").soDienThoai("0985556677").lop(vt01).build()
+                        SinhVien.builder().maSV("B24DCCE001").hoTen("Nguyễn Hoàng Nam").ngaySinh(LocalDate.of(2006, 3, 15)).gioiTinh(GioiTinh.NAM).diaChi("Hà Nội").email("nam.nh@qlsv.edu.vn").soDienThoai("0981112233").lop(ce02).trangThai(TrangThaiSinhVienEnum.DANG_HOC).build(),
+                        SinhVien.builder().maSV("B24DCCE002").hoTen("Trần Thị Mai Lan").ngaySinh(LocalDate.of(2006, 8, 20)).gioiTinh(GioiTinh.NU).diaChi("Hải Phòng").email("lan.ttm@qlsv.edu.vn").soDienThoai("0982223344").lop(ce02).trangThai(TrangThaiSinhVienEnum.DANG_HOC).build(),
+                        SinhVien.builder().maSV("B24DCCN001").hoTen("Lê Văn Hùng").ngaySinh(LocalDate.of(2006, 11, 5)).gioiTinh(GioiTinh.NAM).diaChi("Đà Nẵng").email("hung.lv@qlsv.edu.vn").soDienThoai("0983334455").lop(cn01).trangThai(TrangThaiSinhVienEnum.DANG_HOC).build(),
+                        SinhVien.builder().maSV("B24DCCN002").hoTen("Phạm Thu Thảo").ngaySinh(LocalDate.of(2006, 1, 10)).gioiTinh(GioiTinh.NU).diaChi("Nam Định").email("thao.pt@qlsv.edu.vn").soDienThoai("0984445566").lop(cn01).trangThai(TrangThaiSinhVienEnum.DANG_HOC).build(),
+                        SinhVien.builder().maSV("B24DCVT001").hoTen("Vũ Đình Khoa").ngaySinh(LocalDate.of(2006, 5, 12)).gioiTinh(GioiTinh.NAM).diaChi("Quảng Ninh").email("khoa.vd@qlsv.edu.vn").soDienThoai("0985556677").lop(vt01).trangThai(TrangThaiSinhVienEnum.DANG_HOC).build()
                 );
                 sinhVienRepository.saveAll(sinhViens);
                 log.info("Đã nạp {} bản ghi SINHVIEN.", sinhViens.size());
@@ -159,7 +168,6 @@ public class DataInitializer implements CommandLineRunner {
 
             MonHoc mhCsdl = monHocRepository.findById("INT1313").orElse(null);
             MonHoc mhCtdl = monHocRepository.findById("INT1306").orElse(null);
-            MonHoc mhThdc = monHocRepository.findById("INT1155").orElse(null);
             MonHoc mhDaiSo = monHocRepository.findById("BAS1201").orElse(null);
 
             HocKy hk1 = hocKyRepository.findById("2024-1").orElse(null);
@@ -193,6 +201,91 @@ public class DataInitializer implements CommandLineRunner {
                 List<KetQua> ketQuas = List.of(kq1, kq2, kq3, kq4, kq5);
                 ketQuaRepository.saveAll(ketQuas);
                 log.info("Đã nạp {} bản ghi KETQUA.", ketQuas.size());
+            }
+        }
+    }
+
+    private void seedTaiKhoan() {
+        // Tài khoản ADMIN mặc định: admin / admin123
+        if (!taiKhoanRepository.existsByUsername("admin")) {
+            log.info("Khởi tạo tài khoản Quản trị viên (admin / admin123)...");
+            TaiKhoan admin = TaiKhoan.builder()
+                    .username("admin")
+                    .password(passwordEncoder.encode("admin123"))
+                    .role(RoleEnum.ADMIN)
+                    .trangThai(true)
+                    .build();
+            taiKhoanRepository.save(admin);
+            log.info("Đã tạo tài khoản admin mặc định.");
+        }
+
+        // Tài khoản GIANGVIEN mẫu: gv01 / 123456 liên kết với GV01
+        if (!taiKhoanRepository.existsByUsername("gv01")) {
+            GiangVien gv01 = giangVienRepository.findById("GV01").orElse(null);
+            if (gv01 != null) {
+                log.info("Khởi tạo tài khoản Giảng viên (gv01 / 123456)...");
+                TaiKhoan tkGv = TaiKhoan.builder()
+                        .username("gv01")
+                        .password(passwordEncoder.encode("123456"))
+                        .role(RoleEnum.GIANGVIEN)
+                        .giangVien(gv01)
+                        .trangThai(true)
+                        .build();
+                taiKhoanRepository.save(tkGv);
+                log.info("Đã tạo tài khoản giảng viên gv01.");
+            }
+        }
+
+        // Tài khoản SINHVIEN mẫu: b24dcce001 / 123456 liên kết với B24DCCE001
+        if (!taiKhoanRepository.existsByUsername("b24dcce001")) {
+            SinhVien sv = sinhVienRepository.findById("B24DCCE001").orElse(null);
+            if (sv != null) {
+                log.info("Khởi tạo tài khoản Sinh viên (b24dcce001 / 123456)...");
+                TaiKhoan tkSv = TaiKhoan.builder()
+                        .username("b24dcce001")
+                        .password(passwordEncoder.encode("123456"))
+                        .role(RoleEnum.SINHVIEN)
+                        .sinhVien(sv)
+                        .trangThai(true)
+                        .build();
+                taiKhoanRepository.save(tkSv);
+                log.info("Đã tạo tài khoản sinh viên b24dcce001.");
+            }
+        }
+    }
+
+    private void seedPhanCong() {
+        if (phanCongRepository.count() == 0) {
+            log.info("Khởi tạo dữ liệu mẫu cho PHANCONG...");
+            GiangVien gv01 = giangVienRepository.findById("GV01").orElse(null);
+            GiangVien gv02 = giangVienRepository.findById("GV02").orElse(null);
+
+            MonHoc mhCsdl = monHocRepository.findById("INT1313").orElse(null);
+            MonHoc mhCtdl = monHocRepository.findById("INT1306").orElse(null);
+
+            Lop ce02 = lopRepository.findById("D24CQCE02-B").orElse(null);
+            Lop cn01 = lopRepository.findById("D24CQCN01-B").orElse(null);
+
+            HocKy hk1 = hocKyRepository.findById("2024-1").orElse(null);
+
+            if (gv01 != null && mhCsdl != null && ce02 != null && hk1 != null) {
+                List<PhanCong> list = new ArrayList<>();
+
+                // GV01 dạy Cơ sở dữ liệu lớp D24CQCE02-B kỳ 2024-1
+                list.add(PhanCong.builder().giangVien(gv01).monHoc(mhCsdl).lop(ce02).hocKy(hk1).build());
+
+                // GV01 dạy Cấu trúc dữ liệu lớp D24CQCE02-B kỳ 2024-1
+                if (mhCtdl != null) {
+                    list.add(PhanCong.builder().giangVien(gv01).monHoc(mhCtdl).lop(ce02).hocKy(hk1).build());
+                }
+
+                // GV02 dạy Cơ sở dữ liệu lớp D24CQCN01-B kỳ 2024-1
+                if (gv02 != null && cn01 != null) {
+                    list.add(PhanCong.builder().giangVien(gv02).monHoc(mhCsdl).lop(cn01).hocKy(hk1).build());
+                }
+
+                phanCongRepository.saveAll(list);
+                log.info("Đã nạp {} bản ghi PHANCONG.", list.size());
             }
         }
     }

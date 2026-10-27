@@ -7,12 +7,15 @@ import {
   Bell,
   ChevronDown,
   ChevronRight,
+  LogOut,
   Menu,
-  PanelLeftClose,
   Moon,
+  PanelLeftClose,
   Search,
   Settings2,
+  Shield,
   Sun,
+  User,
 } from "lucide-react"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -28,6 +31,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { navigationItems } from "@/components/app-navigation"
+import { authService, type LoginResponse } from "@/services"
 
 export function AppHeader({
   activePath,
@@ -42,7 +46,12 @@ export function AppHeader({
   const { setTheme, theme } = useTheme()
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState("")
+  const [currentUser, setCurrentUser] = useState<LoginResponse | null>(null)
   const currentPage = navigationItems.find((item) => item.href === activePath) ?? navigationItems[0]
+
+  useEffect(() => {
+    setCurrentUser(authService.getCurrentUser())
+  }, [])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -67,6 +76,28 @@ export function AppHeader({
     setQuery("")
     router.push(href)
   }
+
+  const handleLogout = () => {
+    authService.logout()
+    toast.success("Đã đăng xuất thành công.")
+    router.replace("/login")
+  }
+
+  const roleLabel = useMemo(() => {
+    switch (currentUser?.role) {
+      case "ADMIN":
+        return "Quản trị viên"
+      case "GIANGVIEN":
+        return "Giảng viên"
+      case "SINHVIEN":
+        return "Sinh viên"
+      default:
+        return currentUser?.role || "Quản trị viên"
+    }
+  }, [currentUser?.role])
+
+  const userDisplayName = currentUser?.username || "Admin"
+  const avatarInitials = (userDisplayName.length >= 2 ? userDisplayName.slice(0, 2) : "AD").toUpperCase()
 
   return (
     <>
@@ -113,21 +144,27 @@ export function AppHeader({
           <div className="mx-1 hidden h-7 w-px bg-border sm:block" aria-hidden="true" />
           <DropdownMenu>
             <DropdownMenuTrigger render={<Button type="button" variant="ghost" className="h-10 gap-2 rounded-xl px-1.5 sm:px-2" aria-label="Mở menu tài khoản" />}>
-              <Avatar className="size-8"><AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">MQ</AvatarFallback></Avatar>
+              <Avatar className="size-8"><AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">{avatarInitials}</AvatarFallback></Avatar>
               <span className="hidden text-left sm:block">
-                <span className="block text-xs font-semibold leading-4">Minh Quân</span>
-                <span className="block text-[10px] leading-4 text-muted-foreground">Quản trị viên</span>
+                <span className="block text-xs font-semibold leading-4">{userDisplayName}</span>
+                <span className="block text-[10px] leading-4 text-muted-foreground">{roleLabel}</span>
               </span>
               <ChevronDown className="hidden text-muted-foreground sm:block" data-icon="inline-end" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel className="font-normal">
-                <span className="block text-sm font-medium">Nguyễn Minh Quân</span>
-                <span className="mt-1 block text-xs text-muted-foreground">quan.minh@ptit.edu.vn</span>
+                <span className="block text-sm font-medium">{userDisplayName}</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">Vai trò: <span className="font-semibold text-foreground">{roleLabel}</span></span>
+                {currentUser?.maSV && <span className="block text-xs text-muted-foreground">Mã SV: {currentUser.maSV}</span>}
+                {currentUser?.maGV && <span className="block text-xs text-muted-foreground">Mã GV: {currentUser.maGV}</span>}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigateTo("/hoc-ky")}>
                 <Settings2 data-icon="inline-start" />Cấu hình học vụ
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                <LogOut data-icon="inline-start" />Đăng xuất
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

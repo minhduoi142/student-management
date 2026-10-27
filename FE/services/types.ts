@@ -13,6 +13,21 @@ export interface PageResponse<T> {
   last: boolean
 }
 
+// ==================== AUTH & TÀI KHOẢN ====================
+export interface LoginRequest {
+  username: string
+  password: string
+}
+
+export interface LoginResponse {
+  accessToken: string
+  tokenType: string
+  username: string
+  role: RoleEnum
+  maSV?: string
+  maGV?: string
+}
+
 // ==================== SINH VIÊN ====================
 export interface SinhVienRequest {
   maSV: string
@@ -61,6 +76,7 @@ export interface KetQuaRequest {
   maSV: string
   maMH: string
   maHK: string
+  maLop?: string
   diemCC?: number
   diemGK?: number
   diemCK?: number

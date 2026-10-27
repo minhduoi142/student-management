@@ -1,14 +1,19 @@
 package com.ocr.config;
 
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class OpenApiConfig {
+
+    private static final String SECURITY_SCHEME_NAME = "Bearer Authentication";
 
     @Bean
     public OpenAPI customOpenAPI() {
@@ -16,12 +21,21 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("Hệ Thống Quản Lý Sinh Viên API")
                         .version("1.0.0")
-                        .description("Tài liệu RESTful API cho Hệ thống Quản lý Sinh viên (Nhóm 6 CE02)")
+                        .description("Tài liệu RESTful API cho Hệ thống Quản lý Sinh viên - Tích hợp JWT Bearer Token")
                         .contact(new Contact()
                                 .name("Đội ngũ phát triển")
                                 .email("support@qlsv.edu.vn"))
                         .license(new License()
                                 .name("Apache 2.0")
-                                .url("https://springdoc.org")));
+                                .url("https://springdoc.org")))
+                .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME))
+                .components(new Components()
+                        .addSecuritySchemes(SECURITY_SCHEME_NAME,
+                                new SecurityScheme()
+                                        .name(SECURITY_SCHEME_NAME)
+                                        .type(SecurityScheme.Type.HTTP)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT")
+                                        .description("Nhập JWT Access Token để xác thực (không cần gõ tiền tố 'Bearer ')")));
     }
 }

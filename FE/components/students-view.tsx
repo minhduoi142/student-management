@@ -1,28 +1,59 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense, useCallback, useEffect, useMemo, useState, type FormEvent } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
+  BookOpen,
+  Building2,
+  Calendar,
   ContactRound,
   Download,
+  Eye,
   GraduationCap,
   Loader2,
+  Mail,
+  MapPin,
   MoreHorizontal,
   Pencil,
+  Phone,
   Plus,
   RotateCcw,
   Search,
   Trash2,
+  UserCheck,
   UsersRound,
+  X,
 } from "lucide-react"
 import { toast } from "sonner"
 import { InitialAvatar, PageHeading, Pagination, RequestBadge } from "@/components/admin-ui"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -32,7 +63,7 @@ import { studentService } from "@/services"
 import type { GioiTinh, SinhVienRequest, SinhVienResponse } from "@/services/types"
 import { getErrorMessage, getSuccessMessage } from "@/lib/api-client"
 
-const pageSize = 6
+const pageSize = 8
 
 type StudentFormValues = {
   maSV: string
@@ -160,131 +191,130 @@ function StudentFormDialog({
           maLop: values.maLop,
         }
         const res = await studentService.createStudent(payload)
-        toast.success(getSuccessMessage(res, "Tạo mới hồ sơ sinh viên thành công."))
+        toast.success(getSuccessMessage(res, "Thêm sinh viên mới thành công."))
       }
+
       onOpenChange(false)
       onSuccess()
     } catch (err) {
-      const msg = getErrorMessage(err, "Thao tác thất bại.")
-      toast.error(msg)
-      if (mode === "full" && !student) {
-        setErrors((current) => ({ ...current, maSV: msg }))
-      }
+      toast.error(getErrorMessage(err, "Thao tác thất bại"))
     } finally {
       setSubmitting(false)
     }
   }
 
-  const isContactOnly = mode === "contact"
-  const title = isContactOnly ? "Cập nhật thông tin liên hệ" : student ? "Chỉnh sửa hồ sơ sinh viên" : "Thêm sinh viên mới"
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92dvh] gap-0 overflow-y-auto p-0 sm:max-w-2xl">
         <DialogHeader className="border-b px-5 py-4 sm:px-6">
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>
+            {mode === "contact"
+              ? "Cập nhật thông tin liên hệ"
+              : student
+                ? "Chỉnh sửa hồ sơ sinh viên"
+                : "Thêm sinh viên mới"}
+          </DialogTitle>
           <DialogDescription>
-            {isContactOnly
-              ? "Cập nhật thông tin liên hệ (SĐT, Email, Địa chỉ) - Ứng với Câu 11."
-              : "Thông tin hồ sơ sinh viên được kiểm tra và lưu trực tiếp vào cơ sở dữ liệu."}
+            {mode === "contact"
+              ? "Cập nhật địa chỉ, email và số điện thoại liên lạc của sinh viên."
+              : "Hồ sơ học vụ được lưu đồng bộ trực tiếp vào cơ sở dữ liệu."}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="grid gap-5 px-5 py-5 sm:px-6">
-          {!isContactOnly ? (
-            <FieldGroup className="grid gap-4 sm:grid-cols-2">
-              <Field data-invalid={Boolean(errors.maSV)}>
-                <FieldLabel htmlFor="student-code">Mã sinh viên</FieldLabel>
-                <Input
-                  id="student-code"
-                  value={values.maSV}
-                  onChange={(event) => updateValue("maSV", event.target.value.toUpperCase())}
-                  placeholder="Ví dụ: B24DCCE001"
-                  disabled={Boolean(student) || submitting}
-                  aria-invalid={Boolean(errors.maSV)}
-                />
-                <FieldError>{errors.maSV}</FieldError>
-              </Field>
-              <Field data-invalid={Boolean(errors.hoTen)}>
-                <FieldLabel htmlFor="student-name">Họ và tên</FieldLabel>
-                <Input
-                  id="student-name"
-                  value={values.hoTen}
-                  onChange={(event) => updateValue("hoTen", event.target.value)}
-                  placeholder="Nguyễn Hoàng Nam"
-                  disabled={submitting}
-                  aria-invalid={Boolean(errors.hoTen)}
-                />
-                <FieldError>{errors.hoTen}</FieldError>
-              </Field>
-              <Field data-invalid={Boolean(errors.ngaySinh)}>
-                <FieldLabel htmlFor="student-birth">Ngày sinh</FieldLabel>
-                <Input
-                  id="student-birth"
-                  type="date"
-                  value={values.ngaySinh}
-                  onChange={(event) => updateValue("ngaySinh", event.target.value)}
-                  disabled={submitting}
-                  aria-invalid={Boolean(errors.ngaySinh)}
-                />
-                <FieldError>{errors.ngaySinh}</FieldError>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="student-gender">Giới tính</FieldLabel>
-                <Select
-                  value={values.gioiTinh}
-                  onValueChange={(value) => updateValue("gioiTinh", (value ?? "Nam") as StudentFormValues["gioiTinh"])}
-                  disabled={submitting}
-                >
-                  <SelectTrigger id="student-gender" className="w-full">
-                    <SelectValue placeholder="Chọn giới tính" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="Nam">Nam</SelectItem>
-                      <SelectItem value="Nữ">Nữ</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Field data-invalid={Boolean(errors.maLop)} className="sm:col-span-2">
-                <FieldLabel htmlFor="student-class">Lớp học</FieldLabel>
-                <Select
-                  value={values.maLop}
-                  onValueChange={(value) => updateValue("maLop", value ?? "")}
-                  disabled={submitting}
-                >
-                  <SelectTrigger id="student-class" className="w-full" aria-invalid={Boolean(errors.maLop)}>
-                    <SelectValue placeholder="Chọn lớp học" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {classes.map((academicClass) => {
-                        const faculty = faculties.find((item) => item.maKhoa === academicClass.maKhoa)
-                        return (
-                          <SelectItem key={academicClass.maLop} value={academicClass.maLop}>
-                            {academicClass.maLop} · {academicClass.tenLop}
-                            {faculty ? ` — ${faculty.tenKhoa}` : ""}
-                          </SelectItem>
-                        )
-                      })}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-                <FieldError>{errors.maLop}</FieldError>
-              </Field>
-            </FieldGroup>
-          ) : null}
 
+        <form onSubmit={handleSubmit} className="grid gap-5 px-5 py-5 sm:px-6">
           <FieldGroup className="grid gap-4 sm:grid-cols-2">
+            {mode === "full" ? (
+              <>
+                <Field data-invalid={Boolean(errors.maSV)}>
+                  <FieldLabel htmlFor="student-id">Mã sinh viên</FieldLabel>
+                  <Input
+                    id="student-id"
+                    value={values.maSV}
+                    onChange={(event) => updateValue("maSV", event.target.value.toUpperCase())}
+                    placeholder="B20DCCN001"
+                    disabled={Boolean(student) || submitting}
+                    aria-invalid={Boolean(errors.maSV)}
+                  />
+                  <FieldError>{errors.maSV}</FieldError>
+                </Field>
+                <Field data-invalid={Boolean(errors.hoTen)}>
+                  <FieldLabel htmlFor="student-name">Họ và tên</FieldLabel>
+                  <Input
+                    id="student-name"
+                    value={values.hoTen}
+                    onChange={(event) => updateValue("hoTen", event.target.value)}
+                    placeholder="Nguyễn Văn An"
+                    disabled={submitting}
+                    aria-invalid={Boolean(errors.hoTen)}
+                  />
+                  <FieldError>{errors.hoTen}</FieldError>
+                </Field>
+                <Field data-invalid={Boolean(errors.ngaySinh)}>
+                  <FieldLabel htmlFor="student-dob">Ngày sinh</FieldLabel>
+                  <Input
+                    id="student-dob"
+                    type="date"
+                    value={values.ngaySinh}
+                    onChange={(event) => updateValue("ngaySinh", event.target.value)}
+                    disabled={submitting}
+                    aria-invalid={Boolean(errors.ngaySinh)}
+                  />
+                  <FieldError>{errors.ngaySinh}</FieldError>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="student-gender">Giới tính</FieldLabel>
+                  <Select
+                    value={values.gioiTinh}
+                    onValueChange={(value) => updateValue("gioiTinh", (value as GioiTinh) ?? "Nam")}
+                    disabled={submitting}
+                  >
+                    <SelectTrigger id="student-gender" className="w-full">
+                      <SelectValue placeholder="Chọn giới tính" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value="Nam">Nam</SelectItem>
+                        <SelectItem value="Nữ">Nữ</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field data-invalid={Boolean(errors.maLop)} className="sm:col-span-2">
+                  <FieldLabel htmlFor="student-class">Lớp học phụ trách</FieldLabel>
+                  <Select
+                    value={values.maLop}
+                    onValueChange={(value) => updateValue("maLop", value ?? "")}
+                    disabled={submitting}
+                  >
+                    <SelectTrigger id="student-class" className="w-full" aria-invalid={Boolean(errors.maLop)}>
+                      <SelectValue placeholder="Chọn lớp" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {classes.map((c) => {
+                          const faculty = faculties.find((f) => f.maKhoa === c.maKhoa)
+                          return (
+                            <SelectItem key={c.maLop} value={c.maLop}>
+                              {c.maLop} · {c.tenLop} {faculty ? `(${faculty.tenKhoa})` : ""}
+                            </SelectItem>
+                          )
+                        })}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <FieldError>{errors.maLop}</FieldError>
+                </Field>
+              </>
+            ) : null}
+
             <Field data-invalid={Boolean(errors.email)}>
               <FieldLabel htmlFor="student-email">Email</FieldLabel>
               <Input
                 id="student-email"
                 type="email"
-                autoComplete="email"
                 value={values.email}
                 onChange={(event) => updateValue("email", event.target.value)}
-                placeholder="nam.nh@qlsv.edu.vn"
+                placeholder="sinhvien@qlsv.edu.vn"
                 disabled={submitting}
                 aria-invalid={Boolean(errors.email)}
               />
@@ -295,8 +325,6 @@ function StudentFormDialog({
               <Input
                 id="student-phone"
                 type="tel"
-                inputMode="numeric"
-                autoComplete="tel"
                 value={values.soDienThoai}
                 onChange={(event) => updateValue("soDienThoai", event.target.value.replace(/\D/g, "").slice(0, 10))}
                 placeholder="0981234567"
@@ -306,7 +334,7 @@ function StudentFormDialog({
               <FieldError>{errors.soDienThoai}</FieldError>
             </Field>
             <Field data-invalid={Boolean(errors.diaChi)} className="sm:col-span-2">
-              <FieldLabel htmlFor="student-address">Địa chỉ</FieldLabel>
+              <FieldLabel htmlFor="student-address">Địa chỉ thường trú</FieldLabel>
               <Input
                 id="student-address"
                 value={values.diaChi}
@@ -334,12 +362,217 @@ function StudentFormDialog({
   )
 }
 
-export function StudentsView() {
+function StudentDetailDialog({
+  open,
+  onOpenChange,
+  student,
+  onEditFull,
+  onEditContact,
+  onViewGrades,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  student: SinhVienResponse | null
+  onEditFull: () => void
+  onEditContact: () => void
+  onViewGrades: () => void
+}) {
+  const { classes, faculties, lecturers } = useAcademicData()
+
+  if (!student) return null
+
+  const studentClass = classes.find((c) => c.maLop === student.maLop)
+  const faculty = faculties.find((f) => f.maKhoa === (student.maKhoa || studentClass?.maKhoa))
+  const advisor = lecturers.find((l) => l.maGV === studentClass?.maGVCoVan)
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[92dvh] gap-0 overflow-y-auto p-0 sm:max-w-2xl">
+        <DialogHeader className="border-b bg-muted/20 px-5 py-5 sm:px-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <InitialAvatar name={student.hoTen} className="size-14 text-lg font-bold shadow-sm" />
+              <div>
+                <div className="flex items-center gap-2">
+                  <DialogTitle className="text-xl font-bold">{student.hoTen}</DialogTitle>
+                  <Badge
+                    variant="outline"
+                    className={
+                      student.gioiTinh === "Nam"
+                        ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-300"
+                        : "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-300"
+                    }
+                  >
+                    {student.gioiTinh}
+                  </Badge>
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary" className="font-mono text-xs font-semibold">
+                    {student.maSV}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">·</span>
+                  <span className="text-xs font-medium text-foreground">{student.maLop}</span>
+                  {faculty ? (
+                    <>
+                      <span className="text-xs text-muted-foreground">·</span>
+                      <span className="text-xs text-muted-foreground">{faculty.tenKhoa}</span>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="grid gap-6 p-5 sm:p-6">
+          {/* Thông tin học vụ */}
+          <div>
+            <h4 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <GraduationCap className="size-4 text-primary" />
+              Thông tin học vụ
+            </h4>
+            <div className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2">
+              <div>
+                <p className="text-xs text-muted-foreground">Lớp học</p>
+                <p className="mt-0.5 text-sm font-medium">
+                  {student.maLop} {studentClass?.tenLop ? `(${studentClass.tenLop})` : ""}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Khoa phụ trách</p>
+                <p className="mt-0.5 text-sm font-medium">
+                  {faculty?.tenKhoa || student.tenKhoa || "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Khóa tuyển sinh</p>
+                <p className="mt-0.5 text-sm font-medium">
+                  {studentClass?.khoaHoc ? `Khóa ${studentClass.khoaHoc}` : "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Cố vấn học tập</p>
+                <p className="mt-0.5 text-sm font-medium">
+                  {advisor ? `${advisor.hoTen} (${advisor.maGV})` : "Chưa phân công"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Thông tin cá nhân & liên hệ */}
+          <div>
+            <h4 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <ContactRound className="size-4 text-sky-600 dark:text-sky-400" />
+              Thông tin cá nhân & liên hệ
+            </h4>
+            <div className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2">
+              <div className="flex items-center gap-2.5">
+                <Calendar className="size-4 shrink-0 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Ngày sinh</p>
+                  <p className="text-sm font-medium tabular-nums">
+                    {student.ngaySinh
+                      ? new Date(`${student.ngaySinh}T00:00:00`).toLocaleDateString("vi-VN")
+                      : "—"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <Phone className="size-4 shrink-0 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Số điện thoại</p>
+                  <a
+                    href={`tel:${student.soDienThoai}`}
+                    className="text-sm font-medium tabular-nums text-primary hover:underline"
+                  >
+                    {student.soDienThoai || "—"}
+                  </a>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 sm:col-span-2">
+                <Mail className="size-4 shrink-0 text-muted-foreground" />
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Email nhà trường</p>
+                  <a
+                    href={`mailto:${student.email}`}
+                    className="block truncate text-sm font-medium text-primary hover:underline"
+                  >
+                    {student.email || "—"}
+                  </a>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 sm:col-span-2">
+                <MapPin className="size-4 shrink-0 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Địa chỉ thường trú</p>
+                  <p className="text-sm font-medium">{student.diaChi || "—"}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="flex-col gap-2 border-t bg-muted/10 px-5 py-4 sm:flex-row sm:justify-between sm:px-6">
+          <Button
+            type="button"
+            variant="default"
+            className="w-full sm:w-auto"
+            onClick={() => {
+              onOpenChange(false)
+              onViewGrades()
+            }}
+          >
+            <GraduationCap data-icon="inline-start" />
+            Xem bảng điểm sinh viên
+          </Button>
+
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                onOpenChange(false)
+                onEditContact()
+              }}
+            >
+              <ContactRound data-icon="inline-start" />
+              Đổi liên hệ
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                onOpenChange(false)
+                onEditFull()
+              }}
+            >
+              <Pencil data-icon="inline-start" />
+              Sửa hồ sơ
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
+              Đóng
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function StudentsViewContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { classes, faculties, setActiveTranscriptStudentId, refreshStudents } = useAcademicData()
-  const [keyword, setKeyword] = useState("")
-  const [facultyFilter, setFacultyFilter] = useState("all")
-  const [classFilter, setClassFilter] = useState("all")
+
+  const urlMaLop = searchParams?.get("maLop")
+  const urlMaKhoa = searchParams?.get("maKhoa")
+  const urlKeyword = searchParams?.get("keyword")
+
+  const [keyword, setKeyword] = useState(urlKeyword || "")
+  const [facultyFilter, setFacultyFilter] = useState(urlMaKhoa || "all")
+  const [classFilter, setClassFilter] = useState(urlMaLop || "all")
   const [page, setPage] = useState(1)
 
   const [students, setStudents] = useState<SinhVienResponse[]>([])
@@ -350,8 +583,16 @@ export function StudentsView() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<DialogMode>("full")
   const [selectedStudent, setSelectedStudent] = useState<SinhVienResponse | null>(null)
+  const [detailStudent, setDetailStudent] = useState<SinhVienResponse | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<SinhVienResponse | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  // Sync if URL search params change
+  useEffect(() => {
+    if (urlMaLop) setClassFilter(urlMaLop)
+    if (urlMaKhoa) setFacultyFilter(urlMaKhoa)
+    if (urlKeyword) setKeyword(urlKeyword)
+  }, [urlMaLop, urlMaKhoa, urlKeyword])
 
   const facultyNames = useMemo(() => new Map(faculties.map((f) => [f.maKhoa, f.tenKhoa])), [faculties])
   const classNames = useMemo(() => new Map(classes.map((c) => [c.maLop, c.tenLop])), [classes])
@@ -421,6 +662,7 @@ export function StudentsView() {
     setFacultyFilter("all")
     setClassFilter("all")
     setPage(1)
+    router.replace("/sinh-vien")
     toast.success("Bộ lọc đã được làm mới.")
   }
 
@@ -465,12 +707,14 @@ export function StudentsView() {
     }
   }
 
+  const hasActiveFilters = classFilter !== "all" || facultyFilter !== "all" || Boolean(keyword.trim())
+
   return (
     <div className="animate-in fade-in-0 duration-300">
       <PageHeading
-        eyebrow="Đào tạo · Hồ sơ"
+        eyebrow="Đào tạo · Quản lý hồ sơ"
         title="Quản lý sinh viên"
-        description="Tìm kiếm, lọc theo khoa và lớp; cập nhật hồ sơ học tập kết nối trực tiếp với Spring Boot Backend."
+        description="Tìm kiếm, phân loại theo khoa - lớp, xem bảng điểm và cập nhật thông tin học vụ theo thời gian thực."
         actions={
           <>
             <RequestBadge>GET /api/v1/sinh-vien</RequestBadge>
@@ -542,7 +786,7 @@ export function StudentsView() {
                   setKeyword(event.target.value)
                   setPage(1)
                 }}
-                placeholder="Tìm theo mã sinh viên hoặc họ tên..."
+                placeholder="Tìm theo mã SV hoặc họ tên..."
                 className="pl-10"
               />
             </div>
@@ -591,7 +835,7 @@ export function StudentsView() {
                     <SelectItem value="all">Tất cả lớp</SelectItem>
                     {availableClasses.map((academicClass) => (
                       <SelectItem key={academicClass.maLop} value={academicClass.maLop}>
-                        {academicClass.maLop}
+                        {academicClass.maLop} ({academicClass.tenLop})
                       </SelectItem>
                     ))}
                   </SelectGroup>
@@ -605,20 +849,83 @@ export function StudentsView() {
             </div>
           </div>
 
+          {/* Active Filter Chips Bar */}
+          {hasActiveFilters ? (
+            <div className="flex flex-wrap items-center gap-2 border-b bg-muted/30 px-4 py-2.5 text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">Bộ lọc đang áp dụng:</span>
+              {classFilter !== "all" ? (
+                <Badge variant="secondary" className="gap-1.5 py-0.5 font-normal">
+                  Lớp: <span className="font-semibold text-foreground">{classFilter}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setClassFilter("all")
+                      setPage(1)
+                    }}
+                    className="ml-0.5 rounded-full hover:bg-muted hover:text-foreground"
+                    aria-label="Bỏ lọc lớp"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </Badge>
+              ) : null}
+              {facultyFilter !== "all" ? (
+                <Badge variant="secondary" className="gap-1.5 py-0.5 font-normal">
+                  Khoa: <span className="font-semibold text-foreground">{facultyNames.get(facultyFilter) || facultyFilter}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFacultyFilter("all")
+                      setPage(1)
+                    }}
+                    className="ml-0.5 rounded-full hover:bg-muted hover:text-foreground"
+                    aria-label="Bỏ lọc khoa"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </Badge>
+              ) : null}
+              {keyword ? (
+                <Badge variant="secondary" className="gap-1.5 py-0.5 font-normal">
+                  Từ khóa: &quot;<span className="font-semibold text-foreground">{keyword}</span>&quot;
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setKeyword("")
+                      setPage(1)
+                    }}
+                    className="ml-0.5 rounded-full hover:bg-muted hover:text-foreground"
+                    aria-label="Bỏ lọc từ khóa"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </Badge>
+              ) : null}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-[11px] text-muted-foreground hover:text-destructive"
+                onClick={resetFilters}
+              >
+                Xóa tất cả bộ lọc
+              </Button>
+            </div>
+          ) : null}
+
           <div className="overflow-x-auto">
-            <Table className="min-w-[1180px]">
+            <Table className="min-w-[1100px]">
               <TableHeader>
                 <TableRow className="bg-muted/40 hover:bg-muted/40">
-                  <TableHead className="w-[215px]">Sinh viên</TableHead>
+                  <TableHead className="w-[230px]">Sinh viên</TableHead>
                   <TableHead className="w-[125px]">Mã SV</TableHead>
-                  <TableHead>Giới tính</TableHead>
-                  <TableHead>Ngày sinh</TableHead>
-                  <TableHead>Lớp</TableHead>
-                  <TableHead>Khoa</TableHead>
-                  <TableHead className="w-[205px]">Email</TableHead>
-                  <TableHead>Điện thoại</TableHead>
-                  <TableHead className="w-[160px]">Địa chỉ</TableHead>
-                  <TableHead className="w-[58px] text-right">Thao tác</TableHead>
+                  <TableHead className="w-[90px]">Giới tính</TableHead>
+                  <TableHead className="w-[110px]">Ngày sinh</TableHead>
+                  <TableHead className="w-[180px]">Lớp học</TableHead>
+                  <TableHead className="w-[180px]">Khoa</TableHead>
+                  <TableHead className="w-[200px]">Email</TableHead>
+                  <TableHead className="w-[120px]">Điện thoại</TableHead>
+                  <TableHead className="w-[140px]">Địa chỉ</TableHead>
+                  <TableHead className="w-[60px] text-right">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -641,51 +948,70 @@ export function StudentsView() {
                       "—"
 
                     return (
-                      <TableRow key={student.maSV}>
+                      <TableRow
+                        key={student.maSV}
+                        className="group transition-colors hover:bg-muted/40"
+                      >
                         <TableCell>
-                          <div className="flex min-w-0 items-center gap-2.5">
-                            <InitialAvatar name={student.hoTen} className="size-9" />
+                          <button
+                            type="button"
+                            className="flex min-w-0 items-center gap-2.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg p-0.5"
+                            onClick={() => setDetailStudent(student)}
+                            title="Xem chi tiết hồ sơ"
+                          >
+                            <InitialAvatar name={student.hoTen} className="size-9 shrink-0 transition-transform group-hover:scale-105" />
                             <span className="min-w-0">
-                              <span className="block truncate font-medium">{student.hoTen}</span>
-                              <span className="block truncate text-xs text-muted-foreground">Hồ sơ học vụ</span>
+                              <span className="block truncate font-medium text-foreground hover:text-primary group-hover:underline">
+                                {student.hoTen}
+                              </span>
+                              <span className="block truncate text-xs text-muted-foreground">
+                                Chi tiết hồ sơ →
+                              </span>
                             </span>
-                          </div>
+                          </button>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="font-mono text-[11px]">
+                          <Badge variant="outline" className="font-mono text-[11px] font-semibold">
                             {student.maSV}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className="font-normal">
+                          <Badge
+                            variant="secondary"
+                            className={
+                              student.gioiTinh === "Nam"
+                                ? "border border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-300"
+                                : "border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/60 dark:text-rose-300"
+                            }
+                          >
                             {student.gioiTinh}
                           </Badge>
                         </TableCell>
-                        <TableCell className="tabular-nums">
+                        <TableCell className="tabular-nums text-xs">
                           {student.ngaySinh
                             ? new Date(`${student.ngaySinh}T00:00:00`).toLocaleDateString("vi-VN")
                             : "—"}
                         </TableCell>
                         <TableCell>
-                          <span className="block font-medium">{student.maLop}</span>
-                          <span className="block max-w-[150px] truncate text-xs text-muted-foreground">
+                          <span className="block font-medium text-foreground">{student.maLop}</span>
+                          <span className="block max-w-[160px] truncate text-xs text-muted-foreground">
                             {student.tenLop || classNames.get(student.maLop) || "Chưa gán lớp"}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className="block max-w-[150px] truncate">{facultyName}</span>
+                          <span className="block max-w-[160px] truncate font-medium text-foreground">{facultyName}</span>
                           <span className="text-xs text-muted-foreground">
                             {student.maKhoa || studentClass?.maKhoa || "—"}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className="block max-w-[190px] truncate" title={student.email}>
+                          <span className="block max-w-[185px] truncate text-xs font-mono" title={student.email}>
                             {student.email}
                           </span>
                         </TableCell>
-                        <TableCell className="tabular-nums">{student.soDienThoai}</TableCell>
+                        <TableCell className="tabular-nums text-xs font-mono">{student.soDienThoai}</TableCell>
                         <TableCell>
-                          <span className="block max-w-[145px] truncate" title={student.diaChi}>
+                          <span className="block max-w-[130px] truncate text-xs" title={student.diaChi}>
                             {student.diaChi}
                           </span>
                         </TableCell>
@@ -704,13 +1030,9 @@ export function StudentsView() {
                               <MoreHorizontal />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-56">
-                              <DropdownMenuItem onClick={() => openStudentDialog(student, "full")}>
-                                <Pencil data-icon="inline-start" />
-                                Chỉnh sửa hồ sơ
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => openStudentDialog(student, "contact")}>
-                                <ContactRound data-icon="inline-start" />
-                                Cập nhật liên hệ
+                              <DropdownMenuItem onClick={() => setDetailStudent(student)}>
+                                <Eye data-icon="inline-start" />
+                                Xem chi tiết hồ sơ
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => {
@@ -720,6 +1042,15 @@ export function StudentsView() {
                               >
                                 <GraduationCap data-icon="inline-start" />
                                 Xem bảng điểm cá nhân
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => openStudentDialog(student, "full")}>
+                                <Pencil data-icon="inline-start" />
+                                Chỉnh sửa hồ sơ
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openStudentDialog(student, "contact")}>
+                                <ContactRound data-icon="inline-start" />
+                                Cập nhật liên hệ
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(student)}>
@@ -736,9 +1067,14 @@ export function StudentsView() {
                   <TableRow>
                     <TableCell colSpan={10} className="h-44 text-center">
                       <div className="mx-auto flex max-w-sm flex-col items-center gap-2 text-muted-foreground">
-                        <Search aria-hidden="true" />
-                        <p className="font-medium text-foreground">Không tìm thấy sinh viên</p>
-                        <p className="text-sm">Thử thay đổi từ khóa hoặc bộ lọc khoa, lớp.</p>
+                        <Search className="size-8 text-muted-foreground/60" aria-hidden="true" />
+                        <p className="font-semibold text-foreground">Không tìm thấy sinh viên</p>
+                        <p className="text-xs">
+                          Thử thay đổi từ khóa tìm kiếm hoặc bấm &quot;Làm mới&quot; để xóa bộ lọc.
+                        </p>
+                        <Button type="button" variant="outline" size="sm" onClick={resetFilters} className="mt-2">
+                          Đặt lại bộ lọc
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -755,6 +1091,22 @@ export function StudentsView() {
           />
         </CardContent>
       </Card>
+
+      <StudentDetailDialog
+        open={Boolean(detailStudent)}
+        onOpenChange={(open) => {
+          if (!open) setDetailStudent(null)
+        }}
+        student={detailStudent}
+        onEditFull={() => openStudentDialog(detailStudent, "full")}
+        onEditContact={() => openStudentDialog(detailStudent, "contact")}
+        onViewGrades={() => {
+          if (detailStudent) {
+            setActiveTranscriptStudentId(detailStudent.maSV)
+            router.push("/diem")
+          }
+        }}
+      />
 
       <StudentFormDialog
         open={dialogOpen}
@@ -791,5 +1143,19 @@ export function StudentsView() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+export function StudentsView() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[400px] items-center justify-center">
+          <Loader2 className="size-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <StudentsViewContent />
+    </Suspense>
   )
 }

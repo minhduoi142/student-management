@@ -6,6 +6,7 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4+-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0+-blue.svg)](https://www.mysql.com/)
 [![Swagger](https://img.shields.io/badge/Swagger-OpenAPI%203-green.svg)](http://localhost:8081/swagger-ui/index.html)
+[![JWT](https://img.shields.io/badge/Security-Spring%20Security%206%20%2B%20JWT-red.svg)](https://spring.io/projects/spring-security)
 
 ---
 
@@ -17,6 +18,7 @@
 - [5. Tài Liệu API & Swagger UI](#5-tài-liệu-api--swagger-ui)
 - [6. Cấu Trúc Dự Án (Project Structure)](#6-cấu-trúc-dự-án-project-structure)
 - [7. Kiểm Thử Hệ Thống (Testing)](#7-kiểm-thử-hệ-thống-testing)
+- [8. Đặc Tả Sinh Trang Quản Trị (Admin Generation Spec)](#8-đặc-tả-sinh-trang-quản-trị-admin-generation-spec)
 
 ---
 
@@ -51,17 +53,18 @@ cd student-management
 ## 3. Cấu Hình & Chạy Backend (Spring Boot)
 
 ### Bước 3.1: Chuẩn bị Cơ sở dữ liệu MySQL
-1. Khởi động MySQL Server (qua MySQL Workbench hoặc XAMPP / Docker).
-2. Tạo database `qlsv` (nếu chưa có):
+1. Khởi động MySQL Server (qua MySQL Workbench, XAMPP hoặc Docker).
+2. Tạo database `qlsv` (nếu chưa có) hoặc chạy toàn bộ file script [qlsv_schema.sql](qlsv_schema.sql) để tạo 9 bảng chuẩn kèm dữ liệu mẫu ban đầu:
    ```sql
-   CREATE DATABASE qlsv CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   -- File qlsv_schema.sql tự động tạo DB qlsv và 9 bảng:
+   -- KHOA, GIANGVIEN, LOP, SINHVIEN, MONHOC, HOCKY, KETQUA, TAIKHOAN, PHANCONG
    ```
-   *(Lưu ý: Hệ thống đã bật chế độ tự động sinh bảng `ddl-auto=update`, bạn có thể chạy file [qlsv_schema.sql](qlsv_schema.sql) trong MySQL Workbench nếu muốn nạp trước cấu trúc constraint gốc).*
+   *(Lưu ý: Hệ thống đã bật chế độ tự động sinh bảng `ddl-auto=update` và tự nạp tài khoản admin nếu DB trống).*
 
 ### Bước 3.2: Thiết lập biến môi trường (.env)
 Dự án sử dụng file `.env` để bảo mật thông tin kết nối và cấu hình linh hoạt.
 
-1. Tại thư mục gốc của Backend, sao chép file `.env.example` thành `.env`:
+1. Tại thư mục `BE/` (hoặc thư mục gốc), sao chép file `.env.example` thành `.env`:
    * **Windows (PowerShell):**
      ```powershell
      Copy-Item .env.example .env
@@ -70,7 +73,7 @@ Dự án sử dụng file `.env` để bảo mật thông tin kết nối và c�
      ```bash
      cp .env.example .env
      ```
-2. Mở file `.env` và cập nhật thông số MySQL của bạn (đặc biệt là mật khẩu `DB_PASSWORD`):
+2. Mở file `.env` và cập nhật thông số kết nối MySQL của bạn:
    ```env
    # Server Configuration
    SERVER_PORT=8081
@@ -86,135 +89,119 @@ Dự án sử dụng file `.env` để bảo mật thông tin kết nối và c�
    JPA_FORMAT_SQL=true
    JPA_DDL_AUTO=update
    JPA_NAMING_STRATEGY=org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+
+   # JWT Security Configuration
+   JWT_SECRET=9a4f2c8d3e71b5a6c4d8e2f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e5f7a9b1
+   JWT_EXPIRATION_MS=86400000
    ```
 
 ### Bước 3.3: Khởi chạy Backend
-Bạn có thể chọn 1 trong 2 cách sau:
+```bash
+cd BE
+mvn clean compile
+mvn spring-boot:run
+```
+Khi hiển thị log:
+```text
+Started Main in X.XXX seconds (process running for X.XXX)
+```
+Backend đã sẵn sàng phục vụ tại: **http://localhost:8081**
 
-* **Cách 1: Chạy bằng dòng lệnh Maven:**
-  ```bash
-  mvn clean compile
-  mvn spring-boot:run
-  ```
-
-* **Cách 2: Chạy trực tiếp bằng IDE (IntelliJ IDEA / VS Code / Eclipse):**
-  1. Mở thư mục dự án trong IDE.
-  2. Đợi IDE tải xong các dependency từ `pom.xml`.
-  3. Mở file [Main.java](src/main/java/com/ocr/Main.java) (`src/main/java/com/ocr/Main.java`).
-  4. Nhấn biểu tượng **▶ Run**.
-
-> 💡 **Khởi tạo dữ liệu mẫu tự động**: Khi ứng dụng khởi động thành công, hệ thống tự động kiểm tra và nạp sẵn dữ liệu mẫu cho Khoa, Giảng viên, Lớp học, Sinh viên, Môn học và Kết quả điểm ban đầu.
+### Tài khoản đăng nhập mẫu:
+* **Quản trị viên (ADMIN)**: `admin` / `admin123`
+* **Giảng viên (GIANGVIEN)**: `gv01` / `123456` (Mã GV: `GV01`)
+* **Sinh viên (SINHVIEN)**: `b24dcce001` / `123456` (Mã SV: `B24DCCE001`)
 
 ---
 
 ## 4. Cấu Hình & Chạy Frontend (Admin UI)
 
-Nếu ứng dụng có thư mục Frontend (`frontend` hoặc `client`):
+Giao diện quản trị được xây dựng trên nền tảng **Next.js 16 (App Router)**, **TypeScript**, **Tailwind CSS**, và **Shadcn UI**.
 
-### Bước 4.1: Di chuyển vào thư mục Frontend
+### Bước 4.1: Cài đặt Dependencies
+Mở cửa sổ terminal mới và di chuyển vào thư mục `FE`:
 ```bash
-cd frontend
-```
-
-### Bước 4.2: Cấu hình biến môi trường Frontend
-Tạo file `.env` hoặc `.env.local` trong thư mục `frontend`:
-```env
-# Địa chỉ URL của Backend Spring Boot
-VITE_API_BASE_URL=http://localhost:8081/api/v1
-```
-
-### Bước 4.3: Cài đặt thư viện & Chạy Development Server
-```bash
-# Cài đặt các gói phụ thuộc
+cd FE
 npm install
+```
 
-# Khởi chạy giao diện phát triển
+### Bước 4.2: Chạy Dev Server
+```bash
 npm run dev
 ```
-
-* Mở trình duyệt và truy cập: **`http://localhost:5173`** (hoặc cổng mà terminal hiển thị).
+Truy cập trình duyệt tại: **http://localhost:3000**
 
 ---
 
 ## 5. Tài Liệu API & Swagger UI
 
-Backend đã được tích hợp sẵn tài liệu tương tác **Springdoc OpenAPI v3**:
+Dự án tích hợp đầy đủ tài liệu API trực quan qua **Springdoc OpenAPI 3.0**:
 
-* **Giao diện Swagger UI trực quan:**
-  👉 [http://localhost:8081/swagger-ui/index.html](http://localhost:8081/swagger-ui/index.html)
-* **OpenAPI JSON Spec:**
-  👉 [http://localhost:8081/v3/api-docs](http://localhost:8081/v3/api-docs)
+* **Giao diện Swagger UI tương tác**: [http://localhost:8081/swagger-ui/index.html](http://localhost:8081/swagger-ui/index.html)
+* **OpenAPI Specification (JSON)**: [http://localhost:8081/v3/api-docs](http://localhost:8081/v3/api-docs)
 
-### Danh sách nhóm API chính:
-1. **Quản lý Khoa** (`/api/v1/khoa`): CRUD Khoa đào tạo.
-2. **Quản lý Giảng viên** (`/api/v1/giang-vien`): CRUD Giảng viên, lọc theo Khoa.
-3. **Quản lý Lớp học** (`/api/v1/lop`): CRUD Lớp học, hiển thị tên Khoa và Giảng viên cố vấn.
-4. **Quản lý Hồ sơ Sinh viên** (`/api/v1/sinh-vien`):
-   * Tìm kiếm, lọc theo Lớp (Câu 1), lọc theo Khoa (Câu 13) có phân trang `Pageable`.
-   * Cập nhật thông tin cá nhân (SĐT, địa chỉ - Câu 11).
-5. **Quản lý Môn học** (`/api/v1/mon-hoc`): CRUD Môn học và Số tín chỉ.
-6. **Quản lý Học kỳ** (`/api/v1/hoc-ky`): CRUD Học kỳ và Năm học.
-7. **Quản lý Điểm & Kết quả** (`/api/v1/diem`):
-   * Nhập / sửa điểm theo môn và học kỳ (Câu 12, 14).
-   * Tra cứu bảng điểm chi tiết, tính điểm tổng kết ($0.1 \times CC + 0.3 \times GK + 0.6 \times CK$), tổng tín chỉ tích lũy & GPA (Câu 4, 5).
-8. **Báo cáo Thống kê & Dashboard** (`/api/v1/thong-ke`):
-   * Sĩ số sinh viên từng lớp (Câu 6).
-   * Điểm cuối kỳ trung bình theo môn học (Câu 7).
-   * Lọc sinh viên điểm cuối kỳ $\ge 8.0$ (Câu 8).
-   * Sinh viên chưa có điểm (Câu 9).
-   * Lượt nhập điểm theo học kỳ (Câu 10).
-   * Môn học chưa ai học (Câu 15).
-   * Dashboard KPIs tổng quan toàn trường.
+> **Hướng dẫn xác thực Swagger UI**:
+> 1. Gọi API `POST /api/v1/auth/login` với tài khoản `admin / admin123` để nhận `accessToken`.
+> 2. Bấm nút **Authorize** ở góc trên bên phải Swagger UI và dán token.
 
 ---
 
 ## 6. Cấu Trúc Dự Án (Project Structure)
 
 ```text
-QLSV/
-├── .env.example                          # File mẫu cấu hình biến môi trường
-├── .env                                  # File cấu hình thực tế (được gitignore bảo vệ)
-├── .gitignore                            # Cấu hình bỏ qua các file nhạy cảm và build artifact
-├── pom.xml                               # Quản lý thư viện Maven (Java 21, Spring Boot, JPA, OpenAPI)
-├── qlsv_schema.sql                       # Lược đồ CSDL 7 bảng chuẩn MySQL
-├── README.md                             # Hướng dẫn chi tiết sử dụng dự án
-└── src/
-    ├── main/
-    │   ├── java/com/ocr/
-    │   │   ├── Main.java                 # Entry-point ứng dụng (tự động nạp .env)
-    │   │   ├── config/                   # Cấu hình OpenAPI, Seeder dữ liệu mẫu, Dotenv
-    │   │   ├── controller/               # REST Controllers chuẩn HTTP Status & DTO
-    │   │   ├── dto/                      # Request & Response Records (Bean Validation & Swagger)
-    │   │   ├── entity/                   # JPA Entities (Khoa, GiangVien, Lop, SinhVien, MonHoc, HocKy, KetQua)
-    │   │   │   ├── converter/            # JPA Attribute Converter (GioiTinhConverter)
-    │   │   │   ├── enums/                # Enum định nghĩa Giới tính ('Nam', 'Nữ')
-    │   │   │   └── id/                   # Composite Key KetQuaId (@Embeddable)
-    │   │   ├── exception/                # GlobalExceptionHandler & Custom Domain Exceptions
-    │   │   ├── repository/               # Spring Data JPA Repositories & JPQL Queries
-    │   │   └── service/                  # Business Logic Interfaces & Implementations (@Transactional)
-    │   └── resources/
-    │       ├── application.properties    # Cấu hình ứng dụng ánh xạ biến môi trường
-    │       └── data.sql                  # Script nạp dữ liệu mẫu
-    └── test/
-        └── java/com/ocr/service/         # Unit Tests kiểm thử nghiệp vụ (JUnit 5 + Mockito)
+student-management/
+├── BE/                                   # Backend Source Code (Spring Boot 3 + Java 21)
+│   ├── src/main/java/com/ocr/
+│   │   ├── config/                       # SecurityConfig, OpenApiConfig, DataInitializer
+│   │   ├── controller/                   # AuthController, SinhVienController, KetQuaController...
+│   │   ├── dto/                          # Request & Response Records
+│   │   ├── entity/                       # JPA Entities (Khoa, GiangVien, Lop, SinhVien, MonHoc, HocKy, KetQua, TaiKhoan, PhanCong)
+│   │   ├── exception/                    # GlobalExceptionHandler
+│   │   ├── repository/                   # Spring Data JPA Repositories
+│   │   ├── security/                     # SecurityService, CustomUserDetailsService, JWT Utils
+│   │   └── service/                      # Business Logic Services
+│   ├── src/main/resources/
+│   │   ├── application.properties        # Ánh xạ cấu hình biến môi trường
+│   │   └── data.sql                      # Dữ liệu khởi tạo mặc định
+│   └── pom.xml                           # Maven dependencies
+├── FE/                                   # Frontend Source Code (Next.js 16 + Tailwind CSS)
+│   ├── app/                              # Next.js App Router
+│   ├── components/                       # StudentsView, GradesView, CatalogView, AdminWorkspace
+│   ├── lib/                              # Axios API client có interceptor Bearer Token
+│   └── services/                         # API service modules (student, grade, catalog, auth)
+├── qlsv_schema.sql                       # Lược đồ CSDL 9 bảng chuẩn MySQL 8.0+
+├── ADMIN_GENERATION_SPEC.md              # Đặc tả toàn diện sinh trang quản trị Sinh viên & Giảng viên
+└── README.md                             # Hướng dẫn chi tiết sử dụng dự án
 ```
 
 ---
 
 ## 7. Kiểm Thử Hệ Thống (Testing)
 
-Dự án được bảo vệ bởi bộ Unit Test tự động viết bằng **JUnit 5** và **Mockito** bao phủ toàn bộ các tầng Service:
+Dự án được bảo vệ bởi bộ Unit Test tự động viết bằng **JUnit 5** và **Mockito** bao phủ toàn bộ các tầng Service và Security:
 
-Chạy kiểm thử toàn bộ dự án bằng lệnh:
 ```bash
-mvn clean test
+cd BE
+mvn test
 ```
 
-Kết quả mong đợi:
+Kết quả:
 ```text
-[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Results:
+[INFO] Tests run: 41, Failures: 0, Errors: 0, Skipped: 0
 [INFO] BUILD SUCCESS
 ```
+
+---
+
+## 8. Đặc Tả Sinh Trang Quản Trị (Admin Generation Spec)
+
+Để mở rộng hoặc yêu cầu AI Agent sinh mới/nâng cấp giao diện quản trị chuyên biệt:
+* Xem chi tiết tại tài liệu: [ADMIN_GENERATION_SPEC.md](ADMIN_GENERATION_SPEC.md)
+* Bao gồm:
+  - Bản vẽ kỹ thuật & hợp đồng API cho trang Quản trị Sinh viên (Lọc trạng thái, Import Excel/CSV, Quản lý tài khoản, Xem bảng điểm nhanh).
+  - Bản vẽ kỹ thuật & hợp đồng API cho trang Quản trị Giảng viên & Phân công giảng dạy (`PHANCONG`).
+  - Các câu lệnh prompt mẫu 1-chạm (Prompt-ready) để sinh code tự động.
 
 ---
 

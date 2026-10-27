@@ -26,6 +26,10 @@ public record KetQuaRequest(
     @Schema(description = "Mã học kỳ", example = "2024-1")
     String maHK,
 
+    @Size(max = 15, message = "Mã lớp tối đa 15 ký tự")
+    @Schema(description = "Mã lớp sinh viên (tuỳ chọn để kiểm tra phân công)", example = "D24CQCE02-B")
+    String maLop,
+
     @DecimalMin(value = "0.00", message = "Điểm chuyên cần phải từ 0.00 trở lên")
     @DecimalMax(value = "10.00", message = "Điểm chuyên cần tối đa là 10.00")
     @Digits(integer = 2, fraction = 2, message = "Điểm chuyên cần tối đa 2 chữ số nguyên và 2 chữ số thập phân")
@@ -43,4 +47,8 @@ public record KetQuaRequest(
     @Digits(integer = 2, fraction = 2, message = "Điểm cuối kỳ tối đa 2 chữ số nguyên và 2 chữ số thập phân")
     @Schema(description = "Điểm cuối kỳ (60%)", example = "9.00")
     BigDecimal diemCK
-) {}
+) {
+    public KetQuaRequest(String maSV, String maMH, String maHK, BigDecimal diemCC, BigDecimal diemGK, BigDecimal diemCK) {
+        this(maSV, maMH, maHK, null, diemCC, diemGK, diemCK);
+    }
+}
