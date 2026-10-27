@@ -1,24 +1,31 @@
 "use client"
 
-import { GraduationCap, PanelLeftClose, PanelLeftOpen, Settings2 } from "lucide-react"
+import { GraduationCap, PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { navigationGroups } from "@/components/app-navigation"
+import { getNavigationGroups } from "@/components/app-navigation"
+import type { RoleEnum } from "@/services"
 import { cn } from "cn"
 
 export function AppSidebar({
   activePath,
   collapsed,
   mobileOpen,
+  role,
   onToggleCollapsed,
   onNavigate,
 }: {
   activePath: string
   collapsed: boolean
   mobileOpen: boolean
+  role?: RoleEnum
   onToggleCollapsed: () => void
   onNavigate: (href: string) => void
 }) {
+  const groups = getNavigationGroups(role)
+
+  const portalLabel = role === "GIANGVIEN" ? "Cổng Giảng viên" : role === "SINHVIEN" ? "Cổng Sinh viên" : "Quản trị đào tạo"
+  const portalSub = role === "GIANGVIEN" ? "Teacher portal" : role === "SINHVIEN" ? "Student portal" : "Academic workspace"
+
   return (
     <aside
       aria-label="Điều hướng chính"
@@ -33,8 +40,8 @@ export function AppSidebar({
           <GraduationCap className="size-5" aria-hidden="true" />
         </div>
         <div className={cn("min-w-0 flex-1 transition-opacity", collapsed && "lg:hidden")}>
-          <p className="truncate text-sm font-semibold tracking-wide">Học vụ số</p>
-          <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.18em] text-sidebar-foreground/55">Academic workspace</p>
+          <p className="truncate text-sm font-semibold tracking-wide">{portalLabel}</p>
+          <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.18em] text-sidebar-foreground/55">{portalSub}</p>
         </div>
         <Button
           type="button"
@@ -51,7 +58,7 @@ export function AppSidebar({
 
       <nav className="flex-1 overflow-y-auto px-3 py-5" aria-label="Các phân hệ">
         <div className="flex flex-col gap-6">
-          {navigationGroups.map((group) => (
+          {groups.map((group) => (
             <section key={group.label} aria-label={group.label}>
               <p className={cn("mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-sidebar-foreground/45", collapsed && "lg:sr-only")}>
                 {group.label}
@@ -92,27 +99,9 @@ export function AppSidebar({
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <p className="truncate text-xs font-semibold">Năm học 2024–2025</p>
-              <p className="mt-1 text-[11px] text-sidebar-foreground/60">Học kỳ 1 · Đang diễn ra</p>
+              <p className="mt-1 text-[11px] text-sidebar-foreground/60">Học kỳ 1 • Đang mở vào điểm</p>
             </div>
-            <span className="size-2 shrink-0 rounded-full bg-sky-400 shadow-[0_0_0_4px_rgba(56,189,248,0.12)]" aria-label="Đang hoạt động" />
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="mt-3 h-8 w-full justify-start gap-2 rounded-lg px-2 text-xs text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-            onClick={() => onNavigate("/hoc-ky")}
-          >
-            <Settings2 data-icon="inline-start" />
-            Cấu hình học kỳ
-          </Button>
-        </div>
-        <Separator className="my-3 bg-sidebar-border" />
-        <div className={cn("flex items-center gap-3 rounded-xl px-2 py-1.5", collapsed && "lg:justify-center") }>
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sidebar-accent text-xs font-semibold text-sidebar-foreground">PT</div>
-          <div className={cn("min-w-0 flex-1", collapsed && "lg:hidden")}>
-            <p className="truncate text-xs font-semibold">Hệ thống đào tạo</p>
-            <p className="truncate text-[10px] text-sidebar-foreground/55">Quản trị viên</p>
+            <span className="size-2 shrink-0 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.15)]" aria-label="Hệ thống sẵn sàng" />
           </div>
         </div>
       </div>

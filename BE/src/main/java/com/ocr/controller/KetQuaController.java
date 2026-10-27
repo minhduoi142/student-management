@@ -1,9 +1,11 @@
 package com.ocr.controller;
 
+import com.ocr.dto.request.BatchKetQuaRequest;
 import com.ocr.dto.request.KetQuaRequest;
 import com.ocr.dto.response.ApiResponse;
 import com.ocr.dto.response.BangDiemSinhVienResponse;
 import com.ocr.dto.response.KetQuaResponse;
+import com.ocr.dto.response.LopHocPhanDiemResponse;
 import com.ocr.service.KetQuaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -20,7 +22,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/diem")
 @RequiredArgsConstructor
-@Tag(name = "Quản lý Điểm & Kết quả Học tập", description = "Các API nhập điểm, cập nhật điểm, tra cứu bảng điểm sinh viên và điểm theo môn học")
+@Tag(name = "Quản lý Điểm & Kết quả Học tập", description = "Các API nhập điểm, cập nhật điểm, tra cứu bảng điểm sinh viên và điểm theo môn học / lớp học phần")
 public class KetQuaController {
 
     private final KetQuaService ketQuaService;
@@ -38,6 +40,15 @@ public class KetQuaController {
     public ResponseEntity<ApiResponse<KetQuaResponse>> saveOrUpdateDiem(@Valid @RequestBody KetQuaRequest dto) {
         KetQuaResponse data = ketQuaService.saveOrUpdateDiem(dto);
         return ResponseEntity.ok(ApiResponse.success(data, "Lưu kết quả điểm thành công"));
+    }
+
+    @PostMapping("/batch")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('GIANGVIEN') and @securityService.canTeacherGrade(authentication.name, #request.maMH(), #request.maLop(), #request.maHK()))")
+    @Operation(summary = "Nhập hoặc cập nhật điểm hàng loạt cho lớp học phần",
+               description = "Lưu sổ điểm nhiều sinh viên trong một lớp học phần trong 1 request")
+    public ResponseEntity<ApiResponse<List<KetQuaResponse>>> saveBatchDiem(@Valid @RequestBody BatchKetQuaRequest request) {
+        List<KetQuaResponse> data = ketQuaService.saveBatchDiem(request);
+        return ResponseEntity.ok(ApiResponse.success(data, "Lưu danh sách điểm thành công"));
     }
 
     @GetMapping("/sinh-vien/{maSV}")
@@ -62,6 +73,21 @@ public class KetQuaController {
             @RequestParam(required = false) String maHK) {
         List<KetQuaResponse> data = ketQuaService.getDiemByMonHoc(maMH, maHK);
         return ResponseEntity.ok(ApiResponse.success(data, "Lấy danh sách điểm theo môn học thành công"));
+    }
+
+    @GetMapping("/lop-hoc-phan")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('GIANGVIEN') and @securityService.canTeacherGrade(authentication.name, #maMH, #maLop, #maHK))")
+    @Operation(summary = "Lấy sổ điểm chi tiết của lớp học phần",
+               description = "Xem danh sách sinh viên của lớp kèm toàn bộ các cột điểm CC, GK, CK, TK phục vụ Giảng viên nhập điểm")
+    public ResponseEntity<ApiResponse<LopHocPhanDiemResponse>> getDiemLopHocPhan(
+            @Parameter(description = "Mã lớp sinh viên", example = "D24CQCE02-B", required = true)
+            @RequestParam String maLop,
+            @Parameter(description = "Mã môn học", example = "INT1313", required = true)
+            @RequestParam String maMH,
+            @Parameter(description = "Mã học kỳ", example = "2024-1", required = true)
+            @RequestParam String maHK) {
+        LopHocPhanDiemResponse data = ketQuaService.getDiemLopHocPhan(maLop, maMH, maHK);
+        return ResponseEntity.ok(ApiResponse.success(data, "Lấy sổ điểm lớp học phần thành công"));
     }
 
     @DeleteMapping

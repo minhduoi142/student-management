@@ -18,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -29,6 +30,7 @@ public class SinhVienController {
     private final SinhVienService sinhVienService;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN') or hasRole('GIANGVIEN')")
     @Operation(summary = "Lấy danh sách sinh viên có phân trang, tìm kiếm và bộ lọc",
                description = "Hỗ trợ tìm kiếm theo Họ tên/Mã SV, lọc theo Lớp (Câu 1) và lọc theo Khoa (Câu 13)")
     public ResponseEntity<ApiResponse<PageResponse<SinhVienResponse>>> getStudents(
@@ -47,6 +49,7 @@ public class SinhVienController {
     }
 
     @GetMapping("/{maSV}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('GIANGVIEN') or (hasRole('SINHVIEN') and @securityService.isStudentOwner(#maSV))")
     @Operation(summary = "Lấy chi tiết hồ sơ Sinh viên theo mã sinh viên")
     public ResponseEntity<ApiResponse<SinhVienResponse>> getStudentById(@PathVariable String maSV) {
         SinhVienResponse data = sinhVienService.getStudentById(maSV);
@@ -54,6 +57,7 @@ public class SinhVienController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Tạo mới một hồ sơ Sinh viên")
     @ApiResponses(value = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Tạo sinh viên thành công"),
@@ -68,6 +72,7 @@ public class SinhVienController {
     }
 
     @PutMapping("/{maSV}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Cập nhật toàn bộ thông tin Sinh viên")
     public ResponseEntity<ApiResponse<SinhVienResponse>> updateStudent(
             @PathVariable String maSV,
@@ -77,6 +82,7 @@ public class SinhVienController {
     }
 
     @PatchMapping("/{maSV}/profile")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('SINHVIEN') and @securityService.isStudentOwner(#maSV))")
     @Operation(summary = "Cập nhật thông tin cá nhân sinh viên (SĐT, Địa chỉ, Email) - Ứng với Câu 11",
                description = "Chỉ cập nhật thông tin liên hệ mà không làm thay đổi mã sinh viên hoặc lớp học")
     public ResponseEntity<ApiResponse<SinhVienResponse>> updateProfile(
@@ -87,6 +93,7 @@ public class SinhVienController {
     }
 
     @DeleteMapping("/{maSV}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Xóa hồ sơ Sinh viên (tự động xóa kèm kết quả học tập liên quan)")
     public ResponseEntity<ApiResponse<Void>> deleteStudent(@PathVariable String maSV) {
         sinhVienService.deleteStudent(maSV);

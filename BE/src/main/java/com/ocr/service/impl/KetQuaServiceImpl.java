@@ -1,18 +1,15 @@
 package com.ocr.service.impl;
 
+import com.ocr.dto.request.BatchKetQuaRequest;
 import com.ocr.dto.request.KetQuaRequest;
 import com.ocr.dto.response.BangDiemSinhVienResponse;
 import com.ocr.dto.response.KetQuaResponse;
-import com.ocr.entity.HocKy;
-import com.ocr.entity.KetQua;
-import com.ocr.entity.MonHoc;
-import com.ocr.entity.SinhVien;
+import com.ocr.dto.response.LopHocPhanDiemItemResponse;
+import com.ocr.dto.response.LopHocPhanDiemResponse;
+import com.ocr.entity.*;
 import com.ocr.entity.id.KetQuaId;
 import com.ocr.exception.ResourceNotFoundException;
-import com.ocr.repository.HocKyRepository;
-import com.ocr.repository.KetQuaRepository;
-import com.ocr.repository.MonHocRepository;
-import com.ocr.repository.SinhVienRepository;
+import com.ocr.repository.*;
 import com.ocr.service.KetQuaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,7 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +30,8 @@ public class KetQuaServiceImpl implements KetQuaService {
     private final SinhVienRepository sinhVienRepository;
     private final MonHocRepository monHocRepository;
     private final HocKyRepository hocKyRepository;
+    private final LopRepository lopRepository;
+    private final PhanCongRepository phanCongRepository;
 
     @Override
     @Transactional
@@ -65,6 +66,29 @@ public class KetQuaServiceImpl implements KetQuaService {
 
         KetQua saved = ketQuaRepository.save(ketQua);
         return KetQuaResponse.fromEntity(saved);
+    }
+
+    @Override
+    @Transactional
+    public List<KetQuaResponse> saveBatchDiem(BatchKetQuaRequest request) {
+        if (request.danhSachDiem() == null || request.danhSachDiem().isEmpty()) {
+            return List.of();
+        }
+
+        return request.danhSachDiem().stream()
+                .map(item -> {
+                    KetQuaRequest normalized = new KetQuaRequest(
+                            item.maSV(),
+                            item.maMH() != null && !item.maMH().isBlank() ? item.maMH() : request.maMH(),
+                            item.maHK() != null && !item.maHK().isBlank() ? item.maHK() : request.maHK(),
+                            item.maLop() != null && !item.maLop().isBlank() ? item.maLop() : request.maLop(),
+                            item.diemCC(),
+                            item.diemGK(),
+                            item.diemCK()
+                    );
+                    return saveOrUpdateDiem(normalized);
+                })
+                .toList();
     }
 
     @Override
@@ -132,6 +156,90 @@ public class KetQuaServiceImpl implements KetQuaService {
         }
 
         return ketQuas.stream().map(KetQuaResponse::fromEntity).toList();
+    }
+
+    @Override
+    public LopHocPhanDiemResponse getDiemLopHocPhan(String maLop, String maMH, String maHK) {
+        Lop lop = lopRepository.findById(maLop.trim())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học với mã: " + maLop));
+        MonHoc monHoc = monHocRepository.findById(maMH.trim())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy môn học với mã: " + maMH));
+        HocKy hocKy = hocKyRepository.findById(maHK.trim())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy học kỳ với mã: " + maHK));
+
+        String maGV = null;
+        String tenGV = null;
+        Optional<PhanCong> pcOpt = phanCongRepository.findByMonHoc_MaMHAndLop_MaLopAndHocKy_MaHK(maMH.trim(), maLop.trim(), maHK.trim());
+        if (pcOpt.isPresent() && pcOpt.get().getGiangVien() != null) {
+            maGV = pcOpt.get().getGiangVien().getMaGV();
+            tenGV = pcOpt.get().getGiangVien().getHoTen();
+        }
+
+        List<SinhVien> sinhViens = sinhVienRepository.findByLop_MaLop(maLop.trim());
+        int soLuongCoDiem = 0;
+        List<LopHocPhanDiemItemResponse> itemResponses = new ArrayList<>();
+
+        for (SinhVien sv : sinhViens) {
+            KetQuaId id = new KetQuaId(sv.getMaSV(), maMH.trim(), maHK.trim());
+            Optional<KetQua> kqOpt = ketQuaRepository.findById(id);
+
+            BigDecimal diemCC = null;
+            BigDecimal diemGK = null;
+            BigDecimal diemCK = null;
+            BigDecimal diemTK = null;
+            String diemChu = "-";
+            Boolean dat = null;
+
+            if (kqOpt.isPresent()) {
+                KetQua kq = kqOpt.get();
+                diemCC = kq.getDiemCC();
+                diemGK = kq.getDiemGK();
+                diemCK = kq.getDiemCK();
+                diemTK = kq.getDiemTongKet();
+
+                if (diemCC != null || diemGK != null || diemCK != null) {
+                    soLuongCoDiem++;
+                }
+
+                if (diemTK != null) {
+                    if (diemTK.compareTo(new BigDecimal("8.50")) >= 0) diemChu = "A";
+                    else if (diemTK.compareTo(new BigDecimal("7.00")) >= 0) diemChu = "B";
+                    else if (diemTK.compareTo(new BigDecimal("5.50")) >= 0) diemChu = "C";
+                    else if (diemTK.compareTo(new BigDecimal("4.00")) >= 0) diemChu = "D";
+                    else diemChu = "F";
+
+                    dat = diemTK.compareTo(new BigDecimal("4.00")) >= 0;
+                }
+            }
+
+            itemResponses.add(LopHocPhanDiemItemResponse.builder()
+                    .maSV(sv.getMaSV())
+                    .hoTen(sv.getHoTen())
+                    .ngaySinh(sv.getNgaySinh())
+                    .trangThai(sv.getTrangThai() != null ? sv.getTrangThai().name() : "DANG_HOC")
+                    .diemCC(diemCC)
+                    .diemGK(diemGK)
+                    .diemCK(diemCK)
+                    .diemTK(diemTK)
+                    .diemChu(diemChu)
+                    .dat(dat)
+                    .build());
+        }
+
+        return LopHocPhanDiemResponse.builder()
+                .maLop(lop.getMaLop())
+                .tenLop(lop.getTenLop())
+                .maMH(monHoc.getMaMH())
+                .tenMH(monHoc.getTenMH())
+                .soTinChi(monHoc.getSoTinChi())
+                .maHK(hocKy.getMaHK())
+                .tenHK(hocKy.getTenHocKy())
+                .maGV(maGV)
+                .tenGV(tenGV)
+                .siSo(sinhViens.size())
+                .soLuongCoDiem(soLuongCoDiem)
+                .danhSachSinhVien(itemResponses)
+                .build();
     }
 
     @Override

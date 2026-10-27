@@ -1,5 +1,11 @@
 import apiClient from "@/lib/api-client"
-import type { BangDiemSinhVienResponse, KetQuaRequest, KetQuaResponse } from "./types"
+import type {
+  BangDiemSinhVienResponse,
+  BatchKetQuaRequest,
+  KetQuaRequest,
+  KetQuaResponse,
+  LopHocPhanDiemResponse,
+} from "./types"
 
 export const gradeService = {
   /**
@@ -7,6 +13,13 @@ export const gradeService = {
    */
   async saveOrUpdate(data: KetQuaRequest): Promise<KetQuaResponse> {
     return apiClient.post<never, KetQuaResponse>("/diem", data)
+  },
+
+  /**
+   * Nhập hoặc cập nhật điểm hàng loạt cho cả lớp học phần
+   */
+  async saveBatch(data: BatchKetQuaRequest): Promise<KetQuaResponse[]> {
+    return apiClient.post<never, KetQuaResponse[]>("/diem/batch", data)
   },
 
   /**
@@ -42,5 +55,14 @@ export const gradeService = {
       `/diem/mon-hoc/${encodeURIComponent(maMH)}`,
       { params }
     )
+  },
+
+  /**
+   * Lấy sổ điểm chi tiết của một lớp học phần (cho giảng viên vào điểm)
+   */
+  async getDiemLopHocPhan(maLop: string, maMH: string, maHK: string): Promise<LopHocPhanDiemResponse> {
+    return apiClient.get<never, LopHocPhanDiemResponse>("/diem/lop-hoc-phan", {
+      params: { maLop, maMH, maHK },
+    })
   },
 }

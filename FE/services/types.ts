@@ -109,6 +109,41 @@ export interface BangDiemSinhVienResponse {
   diemTrungBinhTichLuy: number
 }
 
+export interface LopHocPhanDiemItemResponse {
+  maSV: string
+  hoTen: string
+  ngaySinh?: string
+  trangThai?: string
+  diemCC?: number | null
+  diemGK?: number | null
+  diemCK?: number | null
+  diemTK?: number | null
+  diemChu?: string
+  dat?: boolean | null
+}
+
+export interface LopHocPhanDiemResponse {
+  maLop: string
+  tenLop: string
+  maMH: string
+  tenMH: string
+  soTinChi: number
+  maHK: string
+  tenHK: string
+  maGV?: string
+  tenGV?: string
+  siSo: number
+  soLuongCoDiem: number
+  danhSachSinhVien: LopHocPhanDiemItemResponse[]
+}
+
+export interface BatchKetQuaRequest {
+  maMH: string
+  maLop: string
+  maHK: string
+  danhSachDiem: KetQuaRequest[]
+}
+
 // ==================== THỐNG KÊ ====================
 export interface DashboardOverviewResponse {
   tongSoKhoa: number
@@ -239,11 +274,16 @@ export interface TaiKhoanResponse {
 export interface PhanCongResponse {
   maPC: number
   maGV: string
+  tenGV?: string
   hoTenGV?: string
   maMH: string
   tenMH?: string
+  soTinChi?: number
   maLop: string
   tenLop?: string
   maHK: string
+  tenHK?: string
   tenHocKy?: string
+  siSo?: number
+  soLuongCoDiem?: number
 }

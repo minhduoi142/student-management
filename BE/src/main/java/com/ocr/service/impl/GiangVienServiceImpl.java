@@ -2,14 +2,21 @@ package com.ocr.service.impl;
 
 import com.ocr.dto.request.GiangVienRequest;
 import com.ocr.dto.response.GiangVienResponse;
+import com.ocr.dto.response.PhanCongResponse;
 import com.ocr.entity.GiangVien;
 import com.ocr.entity.Khoa;
 import com.ocr.entity.Lop;
+import com.ocr.entity.PhanCong;
+import com.ocr.entity.SinhVien;
+import com.ocr.entity.id.KetQuaId;
 import com.ocr.exception.DuplicateResourceException;
 import com.ocr.exception.ResourceNotFoundException;
 import com.ocr.repository.GiangVienRepository;
+import com.ocr.repository.KetQuaRepository;
 import com.ocr.repository.KhoaRepository;
 import com.ocr.repository.LopRepository;
+import com.ocr.repository.PhanCongRepository;
+import com.ocr.repository.SinhVienRepository;
 import com.ocr.service.GiangVienService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +32,9 @@ public class GiangVienServiceImpl implements GiangVienService {
     private final GiangVienRepository giangVienRepository;
     private final KhoaRepository khoaRepository;
     private final LopRepository lopRepository;
+    private final PhanCongRepository phanCongRepository;
+    private final SinhVienRepository sinhVienRepository;
+    private final KetQuaRepository ketQuaRepository;
 
     @Override
     public List<GiangVienResponse> getAllGiangVien(String maKhoa) {
@@ -103,7 +113,6 @@ public class GiangVienServiceImpl implements GiangVienService {
             throw new ResourceNotFoundException("Không tìm thấy giảng viên với mã: " + maGV);
         }
 
-        // Schema quy định ON DELETE SET NULL đối với lớp cố vấn
         List<Lop> lopsCoVan = lopRepository.findByCoVanHocTap_MaGV(maGV);
         if (!lopsCoVan.isEmpty()) {
             for (Lop lop : lopsCoVan) {
@@ -113,5 +122,59 @@ public class GiangVienServiceImpl implements GiangVienService {
         }
 
         giangVienRepository.deleteById(maGV);
+    }
+
+    @Override
+    public List<PhanCongResponse> getPhanCongByGiangVien(String maGV, String maHK) {
+        if (!giangVienRepository.existsById(maGV.trim())) {
+            throw new ResourceNotFoundException("Không tìm thấy giảng viên với mã: " + maGV);
+        }
+
+        List<PhanCong> list;
+        if (maHK != null && !maHK.trim().isEmpty()) {
+            list = phanCongRepository.findByGiangVien_MaGVAndHocKy_MaHK(maGV.trim(), maHK.trim());
+        } else {
+            list = phanCongRepository.findByGiangVien_MaGV(maGV.trim());
+        }
+
+        return list.stream().map(pc -> {
+            String maLop = pc.getLop() != null ? pc.getLop().getMaLop() : null;
+            String tenLop = pc.getLop() != null ? pc.getLop().getTenLop() : null;
+            String maMH = pc.getMonHoc() != null ? pc.getMonHoc().getMaMH() : null;
+            String tenMH = pc.getMonHoc() != null ? pc.getMonHoc().getTenMH() : null;
+            Integer soTinChi = pc.getMonHoc() != null ? pc.getMonHoc().getSoTinChi() : null;
+            String hk = pc.getHocKy() != null ? pc.getHocKy().getMaHK() : null;
+            String tenHK = pc.getHocKy() != null ? pc.getHocKy().getTenHocKy() : null;
+
+            int siSo = 0;
+            int soLuongCoDiem = 0;
+            if (maLop != null) {
+                List<SinhVien> svList = sinhVienRepository.findByLop_MaLop(maLop);
+                siSo = svList.size();
+                if (maMH != null && hk != null) {
+                    for (SinhVien sv : svList) {
+                        KetQuaId id = new KetQuaId(sv.getMaSV(), maMH, hk);
+                        if (ketQuaRepository.existsById(id)) {
+                            soLuongCoDiem++;
+                        }
+                    }
+                }
+            }
+
+            return PhanCongResponse.builder()
+                    .maPC(pc.getMaPC())
+                    .maGV(pc.getGiangVien() != null ? pc.getGiangVien().getMaGV() : maGV)
+                    .tenGV(pc.getGiangVien() != null ? pc.getGiangVien().getHoTen() : null)
+                    .maMH(maMH)
+                    .tenMH(tenMH)
+                    .soTinChi(soTinChi)
+                    .maLop(maLop)
+                    .tenLop(tenLop)
+                    .maHK(hk)
+                    .tenHK(tenHK)
+                    .siSo(siSo)
+                    .soLuongCoDiem(soLuongCoDiem)
+                    .build();
+        }).toList();
     }
 }

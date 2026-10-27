@@ -10,6 +10,7 @@ import type {
   LopResponse,
   MonHocRequest,
   MonHocResponse,
+  PhanCongResponse,
 } from "./types"
 
 export const catalogService = {
@@ -120,5 +121,11 @@ export const catalogService = {
 
   async deleteGiangVien(maGV: string): Promise<{ _message?: string }> {
     return apiClient.delete<never, { _message?: string }>(`/giang-vien/${encodeURIComponent(maGV)}`)
+  },
+
+  async getPhanCongByGiangVien(maGV: string, maHK?: string): Promise<PhanCongResponse[]> {
+    const params: Record<string, string> = {}
+    if (maHK && maHK !== "all") params.maHK = maHK
+    return apiClient.get<never, PhanCongResponse[]>(`/giang-vien/${encodeURIComponent(maGV)}/phan-cong`, { params })
   },
 }

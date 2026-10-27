@@ -77,6 +77,53 @@ public class SecurityService {
     }
 
     /**
+     * Kiểm tra Giảng viên có phải chính chủ hồ sơ/danh sách phân công hay không.
+     *
+     * @param maGV Mã giảng viên cần tra cứu
+     * @return true nếu là chính chủ hoặc là ADMIN
+     */
+    public boolean isTeacherOwner(String maGV) {
+        if (maGV == null || maGV.isBlank()) {
+            return false;
+        }
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        // Quyền ADMIN luôn cho phép
+        boolean isAdmin = authentication.getAuthorities().stream().anyMatch(auth ->
+                auth.getAuthority().equals("ROLE_ADMIN") || auth.getAuthority().equals("ADMIN"));
+        if (isAdmin) {
+            return true;
+        }
+
+        if (authentication.getPrincipal() instanceof CustomUserDetails userDetails) {
+            if (userDetails.getRole() == RoleEnum.ADMIN) {
+                return true;
+            }
+            if (userDetails.getMaGV() != null) {
+                return userDetails.getMaGV().equalsIgnoreCase(maGV.trim());
+            }
+        }
+
+        String username = authentication.getName();
+        Optional<TaiKhoan> userOpt = taiKhoanRepository.findByUsername(username);
+        if (userOpt.isPresent()) {
+            TaiKhoan taiKhoan = userOpt.get();
+            if (taiKhoan.getRole() == RoleEnum.ADMIN) {
+                return true;
+            }
+            if (taiKhoan.getGiangVien() != null) {
+                return taiKhoan.getGiangVien().getMaGV().equalsIgnoreCase(maGV.trim());
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Kiểm tra Sinh viên chỉ được phép tra cứu bảng điểm của chính mình.
      * So sánh maSV trong token với maSV trong request path.
      *
