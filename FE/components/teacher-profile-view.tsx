@@ -1,23 +1,25 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   BookOpen,
   Building2,
+  Camera,
   GraduationCap,
   Layers3,
   Loader2,
   Mail,
   Phone,
+  Trash2,
   UserCheck,
 } from "lucide-react"
 import { toast } from "sonner"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { catalogService, type GiangVienResponse, type PhanCongResponse } from "@/services"
+import { authService, catalogService, fileService, type GiangVienResponse, type PhanCongResponse } from "@/services"
 
 export function TeacherProfileView({
   maGV,
@@ -26,11 +28,14 @@ export function TeacherProfileView({
   maGV?: string
   onNavigateToGradebook?: (maLop: string, maMH: string, maHK: string) => void
 }) {
-  const effectiveMaGV = maGV || "GV01"
+  const currentUser = authService.getCurrentUser()
+  const effectiveMaGV = maGV || currentUser?.maGV || "GV01"
 
   const [loading, setLoading] = useState(true)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [teacher, setTeacher] = useState<GiangVienResponse | null>(null)
   const [assignments, setAssignments] = useState<PhanCongResponse[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     async function fetchData() {
@@ -42,6 +47,9 @@ export function TeacherProfileView({
         ])
         setTeacher(gvData)
         setAssignments(pcData || [])
+        if (gvData?.avatarUrl) {
+          authService.updateCurrentUserAvatar(gvData.avatarUrl)
+        }
       } catch {
         toast.error("Không thể tải thông tin giảng viên.")
       } finally {
@@ -51,6 +59,51 @@ export function TeacherProfileView({
     fetchData()
   }, [effectiveMaGV])
 
+  // Lắng nghe sự kiện cập nhật avatar từ Header hoặc Dialog
+  useEffect(() => {
+    const handleAvatarUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<string | null>
+      setTeacher((prev) => (prev ? { ...prev, avatarUrl: customEvent.detail || undefined } : null))
+    }
+    window.addEventListener("user-avatar-updated", handleAvatarUpdate)
+    return () => window.removeEventListener("user-avatar-updated", handleAvatarUpdate)
+  }, [])
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Kích thước ảnh đại diện không được vượt quá 5MB.")
+      return
+    }
+
+    setUploadingAvatar(true)
+    try {
+      const res = await fileService.uploadSelfAvatar(file)
+      setTeacher((prev) => (prev ? { ...prev, avatarUrl: res.avatarUrl } : null))
+      toast.success("Cập nhật ảnh đại diện giảng viên thành công!")
+    } catch {
+      toast.error("Không thể tải lên ảnh đại diện. Vui lòng thử lại.")
+    } finally {
+      setUploadingAvatar(false)
+      if (e.target) e.target.value = ""
+    }
+  }
+
+  const handleAvatarDelete = async () => {
+    setUploadingAvatar(true)
+    try {
+      await fileService.deleteSelfAvatar()
+      setTeacher((prev) => (prev ? { ...prev, avatarUrl: undefined } : null))
+      toast.success("Đã xóa ảnh đại diện, chuyển về avatar chữ cái.")
+    } catch {
+      toast.error("Không thể xóa ảnh đại diện. Vui lòng thử lại.")
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex h-72 flex-col items-center justify-center gap-3">
@@ -59,6 +112,9 @@ export function TeacherProfileView({
       </div>
     )
   }
+
+  const currentAvatarUrl =
+    teacher?.avatarUrl || (currentUser?.maGV === effectiveMaGV ? currentUser?.avatarUrl : undefined)
 
   const initials = teacher?.hoTen
     ? teacher.hoTen
@@ -84,11 +140,39 @@ export function TeacherProfileView({
       <Card className="relative overflow-hidden border-sky-500/20 bg-gradient-to-br from-sky-500/10 via-background to-primary/10 p-6 shadow-md">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <Avatar className="size-20 border-2 border-sky-500/30 shadow-inner">
-              <AvatarFallback className="bg-sky-600 text-xl font-bold text-white">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative group">
+              <Avatar className="size-20 border-2 border-sky-500/30 shadow-inner">
+                {currentAvatarUrl && (
+                  <AvatarImage src={currentAvatarUrl} alt={teacher?.hoTen} />
+                )}
+                <AvatarFallback className="bg-sky-600 text-xl font-bold text-white">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-sky-600 text-white shadow-md hover:bg-sky-700 transition-transform active:scale-95 border-2 border-background cursor-pointer"
+                title="Thay đổi ảnh đại diện giảng viên"
+                aria-label="Thay đổi ảnh đại diện giảng viên"
+              >
+                {uploadingAvatar ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Camera className="size-3.5" />
+                )}
+              </button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleAvatarUpload}
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                className="hidden"
+                aria-hidden="true"
+              />
+            </div>
+
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold text-foreground">{teacher?.hoTen || effectiveMaGV}</h2>
@@ -102,6 +186,22 @@ export function TeacherProfileView({
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
                 <span>Khoa: <strong className="text-foreground">{teacher?.tenKhoa || teacher?.maKhoa || "Công nghệ thông tin"}</strong></span>
               </p>
+
+              {currentAvatarUrl && (
+                <div className="mt-2 flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={uploadingAvatar}
+                    onClick={handleAvatarDelete}
+                    className="h-6 px-2 text-[11px] text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="size-3 mr-1" />
+                    Xóa ảnh đại diện
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>

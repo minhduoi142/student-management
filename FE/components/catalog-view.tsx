@@ -947,9 +947,10 @@ export function CatalogView({ resource }: { resource: CatalogResource }) {
                             <TableRow key={gv.maGV} className="hover:bg-muted/30">
                               <TableCell>
                                 <div className="flex items-center gap-2.5">
-                                  <InitialAvatar name={gv.hoTen} className="size-9" />
+                                  <InitialAvatar name={gv.hoTen} src={gv.avatarUrl} className="size-9" />
                                   <span className="font-medium text-foreground">{gv.hoTen}</span>
                                 </div>
+
                               </TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="font-mono text-xs font-semibold">

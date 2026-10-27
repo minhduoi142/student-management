@@ -23,16 +23,41 @@ let cachedToken: string | null = null
 let isLoggingIn = false
 let loginPromise: Promise<string | null> | null = null
 
-// Helper to auto-login as admin (admin / admin123) if Spring Boot security requires JWT
-async function getAdminToken(): Promise<string | null> {
-  if (cachedToken) return cachedToken
+/**
+ * Cập nhật hoặc xóa token xác thực hiện tại trong bộ nhớ và localStorage
+ */
+export function setAuthToken(token: string | null) {
+  cachedToken = token
   if (typeof window !== "undefined") {
-    const stored = localStorage.getItem("qlsv_token")
-    if (stored) {
-      cachedToken = stored
-      return stored
+    if (token) {
+      localStorage.setItem("access_token", token)
+      localStorage.setItem("qlsv_token", token)
+    } else {
+      localStorage.removeItem("access_token")
+      localStorage.removeItem("qlsv_token")
+      localStorage.removeItem("auth_user")
     }
   }
+}
+
+/**
+ * Lấy token xác thực của người dùng hiện tại (ưu tiên phiên đăng nhập trong localStorage)
+ */
+export function getActiveToken(): string | null {
+  if (typeof window !== "undefined") {
+    const userToken = localStorage.getItem("access_token") || localStorage.getItem("qlsv_token")
+    if (userToken) {
+      cachedToken = userToken
+      return userToken
+    }
+  }
+  return cachedToken
+}
+
+// Fallback tự động đăng nhập tài khoản quản trị khi chưa có phiên đăng nhập của người dùng
+async function getFallbackAdminToken(): Promise<string | null> {
+  const currentToken = getActiveToken()
+  if (currentToken) return currentToken
 
   if (isLoggingIn && loginPromise) {
     return loginPromise
@@ -41,7 +66,6 @@ async function getAdminToken(): Promise<string | null> {
   isLoggingIn = true
   loginPromise = (async () => {
     try {
-      // Use direct URL or relative /api/v1/auth/login
       const targetUrl =
         typeof window !== "undefined"
           ? "/api/v1/auth/login"
@@ -61,7 +85,7 @@ async function getAdminToken(): Promise<string | null> {
         return token
       }
     } catch {
-      // Ignore if backend doesn't require auth or login fails
+      // Bỏ qua nếu backend không yêu cầu xác thực hoặc đăng nhập dự phòng lỗi
     } finally {
       isLoggingIn = false
     }
@@ -71,9 +95,12 @@ async function getAdminToken(): Promise<string | null> {
   return loginPromise
 }
 
-// Request interceptor: attach Bearer token if available
+// Request interceptor: Gắn Bearer Token vào header (ƯU TIÊN token của tài khoản đang đăng nhập)
 apiClient.interceptors.request.use(async (config) => {
-  const token = await getAdminToken()
+  let token = getActiveToken()
+  if (!token) {
+    token = await getFallbackAdminToken()
+  }
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -111,12 +138,9 @@ apiClient.interceptors.response.use(
     return resBody
   },
   async (error: AxiosError<any>) => {
-    // If 401 Unauthorized, clear cached token so next request re-authenticates
+    // If 401 Unauthorized, clear cached and stored tokens
     if (error.response?.status === 401) {
-      cachedToken = null
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("qlsv_token")
-      }
+      setAuthToken(null)
     }
 
     const errorData = error.response?.data

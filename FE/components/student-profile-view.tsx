@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useState, type FormEvent } from "react"
+import { useEffect, useRef, useState, type FormEvent } from "react"
 import {
   Building2,
   Calendar,
+  Camera,
   CheckCircle2,
   GraduationCap,
   Loader2,
@@ -13,16 +14,18 @@ import {
   Phone,
   Save,
   ShieldCheck,
+  Trash2,
+  Upload,
   User,
 } from "lucide-react"
 import { toast } from "sonner"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { studentService, type SinhVienResponse } from "@/services"
+import { authService, fileService, studentService, type SinhVienResponse } from "@/services"
 
 export function StudentProfileView({
   maSV,
@@ -31,11 +34,14 @@ export function StudentProfileView({
   maSV?: string
   onNavigateToGrades?: () => void
 }) {
-  const effectiveMaSV = maSV || "B24DCCE001"
+  const currentUser = authService.getCurrentUser()
+  const effectiveMaSV = maSV || currentUser?.maSV || "B24DCCE001"
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [profile, setProfile] = useState<SinhVienResponse | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Form fields cho phép cập nhật (Ứng với Câu 11)
   const [soDienThoai, setSoDienThoai] = useState("")
@@ -50,6 +56,9 @@ export function StudentProfileView({
       setSoDienThoai(data.soDienThoai || "")
       setEmail(data.email || "")
       setDiaChi(data.diaChi || "")
+      if (data?.avatarUrl) {
+        authService.updateCurrentUserAvatar(data.avatarUrl)
+      }
     } catch {
       toast.error("Không thể tải thông tin hồ sơ sinh viên.")
     } finally {
@@ -60,6 +69,16 @@ export function StudentProfileView({
   useEffect(() => {
     loadProfile()
   }, [effectiveMaSV])
+
+  // Lắng nghe sự kiện cập nhật avatar từ Header hoặc Dialog
+  useEffect(() => {
+    const handleAvatarUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<string | null>
+      setProfile((prev) => (prev ? { ...prev, avatarUrl: customEvent.detail || undefined } : null))
+    }
+    window.addEventListener("user-avatar-updated", handleAvatarUpdate)
+    return () => window.removeEventListener("user-avatar-updated", handleAvatarUpdate)
+  }, [])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -99,6 +118,41 @@ export function StudentProfileView({
     }
   }
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Kích thước ảnh đại diện không được vượt quá 5MB.")
+      return
+    }
+
+    setUploadingAvatar(true)
+    try {
+      const res = await fileService.uploadSelfAvatar(file)
+      setProfile((prev) => (prev ? { ...prev, avatarUrl: res.avatarUrl } : null))
+      toast.success("Cập nhật ảnh thẻ sinh viên thành công!")
+    } catch {
+      toast.error("Không thể tải lên ảnh đại diện. Vui lòng thử lại.")
+    } finally {
+      setUploadingAvatar(false)
+      if (e.target) e.target.value = ""
+    }
+  }
+
+  const handleAvatarDelete = async () => {
+    setUploadingAvatar(true)
+    try {
+      await fileService.deleteSelfAvatar()
+      setProfile((prev) => (prev ? { ...prev, avatarUrl: undefined } : null))
+      toast.success("Đã xóa ảnh thẻ sinh viên, chuyển về avatar chữ cái.")
+    } catch {
+      toast.error("Không thể xóa ảnh đại diện. Vui lòng thử lại.")
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex h-72 flex-col items-center justify-center gap-3">
@@ -107,6 +161,9 @@ export function StudentProfileView({
       </div>
     )
   }
+
+  const currentAvatarUrl =
+    profile?.avatarUrl || (currentUser?.maSV === effectiveMaSV ? currentUser?.avatarUrl : undefined)
 
   const initials = profile?.hoTen
     ? profile.hoTen
@@ -132,11 +189,39 @@ export function StudentProfileView({
       <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/10 via-background to-sky-500/10 p-6 shadow-md">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <Avatar className="size-20 border-2 border-primary/30 shadow-inner">
-              <AvatarFallback className="bg-primary text-xl font-bold text-primary-foreground">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative group">
+              <Avatar className="size-20 border-2 border-primary/30 shadow-inner">
+                {currentAvatarUrl && (
+                  <AvatarImage src={currentAvatarUrl} alt={profile?.hoTen} />
+                )}
+                <AvatarFallback className="bg-primary text-xl font-bold text-primary-foreground">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-primary text-primary-foreground shadow-md hover:bg-primary/90 transition-transform active:scale-95 border-2 border-background cursor-pointer"
+                title="Thay đổi ảnh thẻ sinh viên"
+                aria-label="Thay đổi ảnh thẻ sinh viên"
+              >
+                {uploadingAvatar ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Camera className="size-3.5" />
+                )}
+              </button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleAvatarUpload}
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                className="hidden"
+                aria-hidden="true"
+              />
+            </div>
+
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold text-foreground">{profile?.hoTen || effectiveMaSV}</h2>
@@ -152,6 +237,22 @@ export function StudentProfileView({
                 <span>•</span>
                 <span>Khoa: <strong className="text-foreground">{profile?.tenKhoa || "CNTT"}</strong></span>
               </p>
+
+              {currentAvatarUrl && (
+                <div className="mt-2 flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={uploadingAvatar}
+                    onClick={handleAvatarDelete}
+                    className="h-6 px-2 text-[11px] text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="size-3 mr-1" />
+                    Xóa ảnh thẻ
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 

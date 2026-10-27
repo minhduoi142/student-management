@@ -43,7 +43,9 @@ public class AuthServiceImpl implements AuthService {
                 userDetails.getUsername(),
                 userDetails.getRole(),
                 userDetails.getMaSV(),
-                userDetails.getMaGV()
+                userDetails.getMaGV(),
+                userDetails.getAvatarUrl()
         );
+
     }
 }

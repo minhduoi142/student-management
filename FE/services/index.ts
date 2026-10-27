@@ -4,3 +4,5 @@ export * from "./grade.service"
 export * from "./stat.service"
 export * from "./catalog.service"
 export * from "./auth.service"
+export * from "./file.service"
+

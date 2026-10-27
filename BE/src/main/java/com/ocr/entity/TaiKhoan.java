@@ -72,9 +72,13 @@ public class TaiKhoan {
     @ToString.Exclude
     private GiangVien giangVien;
 
+    @Column(name = "AvatarUrl", length = 500)
+    private String avatarUrl;
+
     @Column(name = "TrangThai", nullable = false)
     @Builder.Default
     private Boolean trangThai = true;
+
 
     @Column(name = "CreatedAt", nullable = false, updatable = false)
     @Builder.Default

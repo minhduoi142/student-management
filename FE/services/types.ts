@@ -26,6 +26,7 @@ export interface LoginResponse {
   role: RoleEnum
   maSV?: string
   maGV?: string
+  avatarUrl?: string
 }
 
 // ==================== SINH VIÊN ====================
@@ -39,6 +40,7 @@ export interface SinhVienRequest {
   soDienThoai: string
   maLop: string
   trangThai?: TrangThaiSinhVien
+  avatarUrl?: string
 }
 
 export interface SinhVienProfileUpdateRequest {
@@ -60,7 +62,9 @@ export interface SinhVienResponse {
   maKhoa?: string
   tenKhoa?: string
   trangThai?: TrangThaiSinhVien
+  avatarUrl?: string
 }
+
 
 export interface GetStudentsQuery {
   keyword?: string
@@ -257,7 +261,17 @@ export interface GiangVienResponse {
   soDienThoai: string
   maKhoa: string
   tenKhoa?: string
+  avatarUrl?: string
 }
+
+// ==================== LƯU TRỮ MINIO & AVATAR ====================
+export interface AvatarUploadResponse {
+  avatarUrl: string
+  fileName: string
+  size: number
+  uploadedAt: string
+}
+
 
 // ==================== TÀI KHOẢN & PHÂN QUYỀN ====================
 export interface TaiKhoanResponse {

@@ -21,9 +21,16 @@ public record LoginResponse(
     String maSV,
 
     @Schema(description = "Mã giảng viên liên kết (nếu có)", example = "GV01")
-    String maGV
+    String maGV,
+
+    @Schema(description = "Đường dẫn ảnh đại diện (nếu có)", example = "http://localhost:9000/qlsv-avatars/avatars/admin_xxx.png")
+    String avatarUrl
 ) {
     public LoginResponse(String accessToken, String username, RoleEnum role, String maSV, String maGV) {
-        this(accessToken, "Bearer", username, role, maSV, maGV);
+        this(accessToken, "Bearer", username, role, maSV, maGV, null);
+    }
+
+    public LoginResponse(String accessToken, String username, RoleEnum role, String maSV, String maGV, String avatarUrl) {
+        this(accessToken, "Bearer", username, role, maSV, maGV, avatarUrl);
     }
 }

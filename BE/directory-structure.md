@@ -1,8 +1,8 @@
 # Project Directory Structure
 
-*Generated: 2026-10-27 13:04:01*
+*Generated: 2026-10-27 14:05:00*
 
-Summary: 62 directories, 246 files, 0 Python files
+Summary: 65 directories, 290 files, 0 Python files
 
 ```
 + **BE**
@@ -62,6 +62,9 @@ Summary: 62 directories, 246 files, 0 Python files
             + **maven-compiler-plugin**
                 + **compile**
                     + **default-compile**
+                + **testCompile**
+                    + **default-testCompile**
+        + **surefire-reports**
         + **test-classes**
             + **com**
                 + **ocr**

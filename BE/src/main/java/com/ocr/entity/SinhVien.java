@@ -65,6 +65,10 @@ public class SinhVien {
     @Size(max = 15, message = "Số điện thoại tối đa 15 ký tự")
     private String soDienThoai;
 
+    @Column(name = "AvatarUrl", length = 500)
+    private String avatarUrl;
+
+
     @Enumerated(EnumType.STRING)
     @Column(name = "TrangThai", length = 20, nullable = false)
     @NotNull(message = "Trạng thái sinh viên không được để trống")

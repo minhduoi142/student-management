@@ -49,6 +49,12 @@ const adminNavigationGroups: AppNavigationGroup[] = [
       { label: "Học kỳ", href: "/hoc-ky", icon: CalendarDays, description: "Năm học và kỳ đào tạo" },
     ],
   },
+  {
+    label: "Cá nhân",
+    items: [
+      { label: "Hồ sơ cá nhân", href: "/ho-so", icon: UserCheck, description: "Thông tin tài khoản quản trị và ảnh đại diện" },
+    ],
+  },
 ]
 
 const teacherNavigationGroups: AppNavigationGroup[] = [

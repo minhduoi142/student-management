@@ -59,10 +59,12 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers(
                                 "/api/v1/auth/**",
+                                "/api/v1/files/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
+
                         // Static admin endpoints
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         // All other endpoints require authentication

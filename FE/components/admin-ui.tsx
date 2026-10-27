@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
@@ -35,7 +35,15 @@ export function RequestBadge({ children }: { children: ReactNode }) {
   )
 }
 
-export function InitialAvatar({ name, className = "" }: { name: string; className?: string }) {
+export function InitialAvatar({
+  name,
+  src,
+  className = "",
+}: {
+  name: string
+  src?: string
+  className?: string
+}) {
   const initials = name
     .trim()
     .split(/\s+/)
@@ -46,10 +54,12 @@ export function InitialAvatar({ name, className = "" }: { name: string; classNam
 
   return (
     <Avatar className={className}>
+      {src && <AvatarImage src={src} alt={name} />}
       <AvatarFallback className="bg-primary/10 font-semibold text-primary">{initials || "SV"}</AvatarFallback>
     </Avatar>
   )
 }
+
 
 export function Pagination({
   pageNo,

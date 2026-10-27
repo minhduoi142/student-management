@@ -15,6 +15,7 @@ import { TeacherGradebookView } from "@/components/teacher-gradebook-view"
 import { TeacherProfileView } from "@/components/teacher-profile-view"
 import { StudentPortalView } from "@/components/student-portal-view"
 import { StudentProfileView } from "@/components/student-profile-view"
+import { AdminProfileView } from "@/components/admin-profile-view"
 import { authService, type LoginResponse } from "@/services"
 
 const catalogRoutes = new Set(["/lop", "/khoa", "/mon-hoc", "/giang-vien", "/hoc-ky"])
@@ -149,6 +150,7 @@ export function AdminWorkspace() {
     }
 
     // ==================== VAI TRÒ ADMIN (MẶC ĐỊNH) ====================
+    if (activePath === "/ho-so") return <AdminProfileView onNavigate={navigateTo} />
     if (activePath === "/sinh-vien") return <StudentsView />
     if (activePath === "/diem") return <GradesView />
     if (catalogRoutes.has(activePath)) {

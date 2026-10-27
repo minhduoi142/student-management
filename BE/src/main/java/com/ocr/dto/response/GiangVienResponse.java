@@ -21,8 +21,15 @@ public record GiangVienResponse(
     String maKhoa,
 
     @Schema(description = "Tên khoa công tác", example = "Công nghệ Thông tin 1")
-    String tenKhoa
+    String tenKhoa,
+
+    @Schema(description = "Đường dẫn ảnh đại diện (nếu có)", example = "http://localhost:9000/qlsv-avatars/avatars/gv_xxx.png")
+    String avatarUrl
 ) {
+    public GiangVienResponse(String maGV, String hoTen, String email, String soDienThoai, String maKhoa, String tenKhoa) {
+        this(maGV, hoTen, email, soDienThoai, maKhoa, tenKhoa, null);
+    }
+
     public static GiangVienResponse fromEntity(GiangVien gv) {
         if (gv == null) {
             return null;
@@ -33,7 +40,8 @@ public record GiangVienResponse(
             gv.getEmail(),
             gv.getSoDienThoai(),
             gv.getKhoa() != null ? gv.getKhoa().getMaKhoa() : null,
-            gv.getKhoa() != null ? gv.getKhoa().getTenKhoa() : null
+            gv.getKhoa() != null ? gv.getKhoa().getTenKhoa() : null,
+            gv.getAvatarUrl()
         );
     }
 }

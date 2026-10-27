@@ -44,11 +44,19 @@ public record SinhVienResponse(
     String tenKhoa,
 
     @Schema(description = "Trạng thái học tập: DANG_HOC, BAO_LUU, TOT_NGHIEP, BUOC_THOI_HOC", example = "DANG_HOC")
-    TrangThaiSinhVienEnum trangThai
+    TrangThaiSinhVienEnum trangThai,
+
+    @Schema(description = "Đường dẫn ảnh thẻ đại diện (nếu có)", example = "http://localhost:9000/qlsv-avatars/avatars/sv_xxx.png")
+    String avatarUrl
 ) {
     public SinhVienResponse(String maSV, String hoTen, LocalDate ngaySinh, String gioiTinh, String diaChi,
                             String email, String soDienThoai, String maLop, String tenLop, String maKhoa, String tenKhoa) {
-        this(maSV, hoTen, ngaySinh, gioiTinh, diaChi, email, soDienThoai, maLop, tenLop, maKhoa, tenKhoa, TrangThaiSinhVienEnum.DANG_HOC);
+        this(maSV, hoTen, ngaySinh, gioiTinh, diaChi, email, soDienThoai, maLop, tenLop, maKhoa, tenKhoa, TrangThaiSinhVienEnum.DANG_HOC, null);
+    }
+
+    public SinhVienResponse(String maSV, String hoTen, LocalDate ngaySinh, String gioiTinh, String diaChi,
+                            String email, String soDienThoai, String maLop, String tenLop, String maKhoa, String tenKhoa, TrangThaiSinhVienEnum trangThai) {
+        this(maSV, hoTen, ngaySinh, gioiTinh, diaChi, email, soDienThoai, maLop, tenLop, maKhoa, tenKhoa, trangThai, null);
     }
 
     public static SinhVienResponse fromEntity(SinhVien sv) {
@@ -67,7 +75,8 @@ public record SinhVienResponse(
             sv.getLop() != null ? sv.getLop().getTenLop() : null,
             sv.getLop() != null && sv.getLop().getKhoa() != null ? sv.getLop().getKhoa().getMaKhoa() : null,
             sv.getLop() != null && sv.getLop().getKhoa() != null ? sv.getLop().getKhoa().getTenKhoa() : null,
-            sv.getTrangThai() != null ? sv.getTrangThai() : TrangThaiSinhVienEnum.DANG_HOC
+            sv.getTrangThai() != null ? sv.getTrangThai() : TrangThaiSinhVienEnum.DANG_HOC,
+            sv.getAvatarUrl()
         );
     }
 }

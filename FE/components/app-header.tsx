@@ -1,28 +1,33 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import {
   Bell,
+  Camera,
   ChevronDown,
   ChevronRight,
+  Loader2,
   LogOut,
   Menu,
+
   Moon,
   PanelLeftClose,
   Search,
   Settings2,
   Sun,
+  Trash2,
+  Upload,
   User,
 } from "lucide-react"
 import { toast } from "sonner"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { getNavigationItems } from "@/components/app-navigation"
-import { authService, type LoginResponse } from "@/services"
+import { authService, fileService, type LoginResponse } from "@/services"
 
 export function AppHeader({
   activePath,
@@ -36,12 +41,60 @@ export function AppHeader({
   const router = useRouter()
   const { setTheme, theme } = useTheme()
   const [searchOpen, setSearchOpen] = useState(false)
+  const [avatarModalOpen, setAvatarModalOpen] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [query, setQuery] = useState("")
   const [currentUser, setCurrentUser] = useState<LoginResponse | null>(null)
+  const headerFileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     setCurrentUser(authService.getCurrentUser())
+
+    const handleAvatarUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<string | null>
+      setCurrentUser((prev) => (prev ? { ...prev, avatarUrl: customEvent.detail || undefined } : null))
+    }
+
+    window.addEventListener("user-avatar-updated", handleAvatarUpdate)
+    return () => window.removeEventListener("user-avatar-updated", handleAvatarUpdate)
   }, [])
+
+  const handleHeaderAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Kích thước ảnh đại diện không được vượt quá 5MB.")
+      return
+    }
+
+    setUploadingAvatar(true)
+    try {
+      const res = await fileService.uploadSelfAvatar(file)
+      setCurrentUser((prev) => (prev ? { ...prev, avatarUrl: res.avatarUrl } : null))
+      toast.success("Cập nhật ảnh đại diện thành công!")
+    } catch {
+      toast.error("Không thể tải lên ảnh đại diện. Vui lòng thử lại.")
+    } finally {
+      setUploadingAvatar(false)
+      if (e.target) e.target.value = ""
+    }
+  }
+
+  const handleHeaderAvatarDelete = async () => {
+    setUploadingAvatar(true)
+    try {
+      await fileService.deleteSelfAvatar()
+      setCurrentUser((prev) => (prev ? { ...prev, avatarUrl: undefined } : null))
+      toast.success("Đã xóa ảnh đại diện, chuyển về avatar chữ cái.")
+    } catch {
+      toast.error("Không thể xóa ảnh đại diện. Vui lòng thử lại.")
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
+
 
   const navItems = useMemo(() => {
     return getNavigationItems(currentUser?.role)
@@ -152,14 +205,14 @@ export function AppHeader({
           {/* User info & Dropdown profile / logout */}
           <button
             type="button"
-            onClick={() => {
-              if (currentUser?.role !== "ADMIN") navigateTo("/ho-so")
-              else navigateTo("/")
-            }}
-            className="flex items-center gap-2 rounded-xl px-1.5 py-1 text-left transition-colors hover:bg-muted"
-            title="Xem hồ sơ tài khoản"
+            onClick={() => setAvatarModalOpen(true)}
+            className="flex items-center gap-2 rounded-xl px-1.5 py-1 text-left transition-colors hover:bg-muted cursor-pointer"
+            title="Quản lý ảnh đại diện & hồ sơ"
           >
-            <Avatar className="size-8">
+            <Avatar className="size-8 border border-primary/20">
+              {currentUser?.avatarUrl && (
+                <AvatarImage src={currentUser.avatarUrl} alt={userDisplayName} />
+              )}
               <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
                 {avatarInitials}
               </AvatarFallback>
@@ -169,6 +222,7 @@ export function AppHeader({
               <span className="block text-[10px] leading-4 text-muted-foreground">{roleLabel}</span>
             </span>
           </button>
+
 
           {/* Nút Đăng xuất tiện lợi 1-Click */}
           <Button
@@ -222,6 +276,93 @@ export function AppHeader({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog Quản lý Avatar & Hồ sơ */}
+      <Dialog open={avatarModalOpen} onOpenChange={setAvatarModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ảnh đại diện & Hồ sơ</DialogTitle>
+            <DialogDescription>
+              Xem và cập nhật ảnh đại diện cá nhân trên hệ thống lưu trữ MinIO.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="relative group">
+              <Avatar className="size-24 border-2 border-primary/30 shadow-md">
+                {currentUser?.avatarUrl && (
+                  <AvatarImage src={currentUser.avatarUrl} alt={userDisplayName} />
+                )}
+                <AvatarFallback className="bg-primary text-2xl font-bold text-primary-foreground">
+                  {avatarInitials}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+
+            <div className="text-center">
+              <h3 className="font-semibold text-lg">{userDisplayName}</h3>
+              <p className="text-xs text-muted-foreground">{roleLabel}</p>
+              {currentUser?.maSV && (
+                <p className="text-xs font-mono text-muted-foreground mt-0.5">Mã SV: {currentUser.maSV}</p>
+              )}
+              {currentUser?.maGV && (
+                <p className="text-xs font-mono text-muted-foreground mt-0.5">Mã GV: {currentUser.maGV}</p>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-2 w-full">
+              <input
+                type="file"
+                ref={headerFileInputRef}
+                onChange={handleHeaderAvatarUpload}
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                className="hidden"
+                aria-hidden="true"
+              />
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                className="gap-2"
+                disabled={uploadingAvatar}
+                onClick={() => headerFileInputRef.current?.click()}
+              >
+                {uploadingAvatar ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+                {uploadingAvatar ? "Đang tải lên..." : "Tải ảnh mới"}
+              </Button>
+
+              {currentUser?.avatarUrl && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 text-destructive hover:bg-destructive/10"
+                  disabled={uploadingAvatar}
+                  onClick={handleHeaderAvatarDelete}
+                >
+                  <Trash2 className="size-4" />
+                  Xóa ảnh
+                </Button>
+              )}
+
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="gap-2"
+                onClick={() => {
+                  setAvatarModalOpen(false)
+                  navigateTo("/ho-so")
+                }}
+              >
+                <User className="size-4" />
+                Trang hồ sơ
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
+
   )
 }

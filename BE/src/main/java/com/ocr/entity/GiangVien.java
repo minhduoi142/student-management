@@ -49,6 +49,10 @@ public class GiangVien {
     @Size(max = 15, message = "Số điện thoại tối đa 15 ký tự")
     private String soDienThoai;
 
+    @Column(name = "AvatarUrl", length = 500)
+    private String avatarUrl;
+
+
     // Quan hệ N - 1: Giảng viên thuộc 1 Khoa (bắt buộc)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(

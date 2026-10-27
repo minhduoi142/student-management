@@ -391,7 +391,12 @@ function StudentDetailDialog({
         <DialogHeader className="border-b bg-muted/20 px-5 py-5 sm:px-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3.5">
-              <InitialAvatar name={student.hoTen} className="size-14 text-lg font-bold shadow-sm" />
+              <InitialAvatar
+                name={student.hoTen}
+                src={student.avatarUrl}
+                className="size-14 text-lg font-bold shadow-sm"
+              />
+
               <div>
                 <div className="flex items-center gap-2">
                   <DialogTitle className="text-xl font-bold">{student.hoTen}</DialogTitle>
@@ -959,7 +964,12 @@ function StudentsViewContent() {
                             onClick={() => setDetailStudent(student)}
                             title="Xem chi tiết hồ sơ"
                           >
-                            <InitialAvatar name={student.hoTen} className="size-9 shrink-0 transition-transform group-hover:scale-105" />
+                            <InitialAvatar
+                              name={student.hoTen}
+                              src={student.avatarUrl}
+                              className="size-9 shrink-0 transition-transform group-hover:scale-105"
+                            />
+
                             <span className="min-w-0">
                               <span className="block truncate font-medium text-foreground hover:text-primary group-hover:underline">
                                 {student.hoTen}

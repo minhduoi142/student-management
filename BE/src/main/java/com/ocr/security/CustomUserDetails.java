@@ -24,6 +24,7 @@ public class CustomUserDetails implements UserDetails {
     private final RoleEnum role;
     private final String maSV;
     private final String maGV;
+    private final String avatarUrl;
     private final Boolean trangThai;
     private final Collection<? extends GrantedAuthority> authorities;
 
@@ -44,10 +45,12 @@ public class CustomUserDetails implements UserDetails {
                 .role(taiKhoan.getRole())
                 .maSV(maSV)
                 .maGV(maGV)
+                .avatarUrl(taiKhoan.getAvatarUrl())
                 .trangThai(taiKhoan.getTrangThai())
                 .authorities(auths)
                 .build();
     }
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
