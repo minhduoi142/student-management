@@ -6,6 +6,7 @@ import {
   BookOpen,
   CalendarDays,
   CheckCircle2,
+  GraduationCap,
   HelpCircle,
   Landmark,
   Layers3,
@@ -169,7 +170,7 @@ function getCatalogFields(
       return {
         ...field,
         options: [
-          { value: "", label: "— Không gán cố vấn —" },
+          { value: "NONE", label: "— Không gán cố vấn —" },
           ...lecturers.map((lecturer) => ({
             value: lecturer.maGV,
             label: `${lecturer.maGV} · ${lecturer.hoTen}`,
@@ -250,11 +251,11 @@ function CatalogFormDialog({
 
       if (resource === "lop") {
         const payload = {
-          maLop: values.maLop.trim(),
+          maLop: values.maLop.trim().toUpperCase(),
           tenLop: values.tenLop.trim(),
           khoaHoc: Number(values.khoaHoc) || 2024,
           maKhoa: values.maKhoa,
-          maGVCoVan: values.maGVCoVan?.trim() || undefined,
+          maGVCoVan: values.maGVCoVan && values.maGVCoVan !== "NONE" ? values.maGVCoVan.trim() : undefined,
         }
         const res = isEdit
           ? await catalogService.updateLop(primaryKeyVal, payload)
@@ -549,6 +550,9 @@ export function CatalogView({ resource }: { resource: CatalogResource }) {
   }
 
   const handleSaved = () => {
+    setKeyword("")
+    setFacultyFilter("all")
+    setPage(1)
     fetchCatalogData()
     refreshCatalogs()
   }
@@ -657,7 +661,7 @@ export function CatalogView({ resource }: { resource: CatalogResource }) {
                   />
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                  {resource === "giang-vien" ? (
+                  {resource === "giang-vien" || resource === "lop" ? (
                     <>
                       <label htmlFor="catalog-faculty-filter" className="sr-only">
                         Lọc theo khoa
@@ -1111,6 +1115,101 @@ export function CatalogView({ resource }: { resource: CatalogResource }) {
                         <TableRow>
                           <TableCell colSpan={6} className="h-40 text-center text-sm text-muted-foreground">
                             Không tìm thấy học kỳ nào phù hợp.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                ) : resource === "lop" ? (
+                  <Table className="min-w-[750px]">
+                    <TableHeader>
+                      <TableRow className="bg-muted/40 hover:bg-muted/40">
+                        <TableHead className="w-[140px]">Mã lớp</TableHead>
+                        <TableHead className="w-[280px]">Tên lớp học</TableHead>
+                        <TableHead className="w-[140px]">Khóa tuyển sinh</TableHead>
+                        <TableHead className="w-[200px]">Khoa phụ trách</TableHead>
+                        <TableHead className="w-[200px]">Cố vấn học tập</TableHead>
+                        <TableHead className="w-[60px] text-right">Thao tác</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {loading ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-40 text-center">
+                            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                              <Loader2 className="size-5 animate-spin" />
+                              <span>Đang tải danh sách lớp học...</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : pageContent.length ? (
+                        pageContent.map((item: any) => {
+                          const fName = facultyNameByCode.get(item.maKhoa) || item.tenKhoa || item.maKhoa
+                          const gvName = lecturerNameByCode.get(item.maGVCoVan) || item.tenGVCoVan || "—"
+
+                          return (
+                            <TableRow key={item.maLop} className="hover:bg-muted/30">
+                              <TableCell>
+                                <Badge variant="outline" className="font-mono text-xs font-semibold">
+                                  {item.maLop}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-medium text-foreground">{item.tenLop}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" className="font-mono">
+                                  Khóa {item.khoaHoc}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-sm font-medium">{fName}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {item.maGVCoVan ? (
+                                  <Badge variant="outline" className="gap-1.5 font-normal">
+                                    <GraduationCap className="size-3 text-primary" />
+                                    <span>{gvName}</span>
+                                  </Badge>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">Chưa phân công</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger
+                                    render={
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        aria-label={`Thao tác với lớp ${item.maLop}`}
+                                      />
+                                    }
+                                  >
+                                    <MoreHorizontal />
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-44">
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedRecord(item)
+                                        setDialogOpen(true)
+                                      }}
+                                    >
+                                      <Pencil data-icon="inline-start" />
+                                      Chỉnh sửa
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(item)}>
+                                      <Trash2 data-icon="inline-start" />
+                                      Xóa lớp
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-40 text-center text-sm text-muted-foreground">
+                            Không tìm thấy lớp học nào phù hợp.
                           </TableCell>
                         </TableRow>
                       )}

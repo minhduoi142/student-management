@@ -1,8 +1,8 @@
 # Project Directory Structure
 
-*Generated: 2026-10-27 00:08:16*
+*Generated: 2026-10-28 07:32:22*
 
-Summary: 2884 directories, 33757 files, 0 Python files
+Summary: 2956 directories, 34114 files, 0 Python files
 
 ```
 + **CSDL**
@@ -23,6 +23,8 @@ Summary: 2884 directories, 33757 files, 0 Python files
                                 + **id**
                             + **exception**
                             + **repository**
+                            + **security**
+                                + **jwt**
                             + **service**
                                 + **impl**
                 + **resources**
@@ -32,6 +34,7 @@ Summary: 2884 directories, 33757 files, 0 Python files
                 + **java**
                     + **com**
                         + **ocr**
+                            + **security**
                             + **service**
         + **target**
             + **classes**
@@ -50,6 +53,8 @@ Summary: 2884 directories, 33757 files, 0 Python files
                             + **id**
                         + **exception**
                         + **repository**
+                        + **security**
+                            + **jwt**
                         + **service**
                             + **impl**
             + **generated-sources**
@@ -64,10 +69,12 @@ Summary: 2884 directories, 33757 files, 0 Python files
             + **test-classes**
                 + **com**
                     + **ocr**
+                        + **security**
                         + **service**
     + **FE**
         + **app**
             + **[...slug]**
+            + **login**
         + **components**
             + **ui**
         + **lib**
@@ -2889,4 +2896,69 @@ Summary: 2884 directories, 33757 files, 0 Python files
                         + **parsers**
         + **public**
         + **services**
+    + **QLSV**
+        + **src**
+            + **main**
+                + **java**
+                    + **com**
+                        + **ocr**
+                            + **config**
+                            + **controller**
+                            + **dto**
+                                + **request**
+                                + **response**
+                            + **entity**
+                                + **converter**
+                                + **enums**
+                                + **id**
+                            + **exception**
+                            + **repository**
+                            + **security**
+                                + **jwt**
+                            + **service**
+                                + **impl**
+                + **resources**
+                    + **META-INF**
+                        + **spring**
+            + **test**
+                + **java**
+                    + **com**
+                        + **ocr**
+                            + **security**
+                            + **service**
+        + **target**
+            + **classes**
+                + **META-INF**
+                    + **spring**
+                + **com**
+                    + **ocr**
+                        + **config**
+                        + **controller**
+                        + **dto**
+                            + **request**
+                            + **response**
+                        + **entity**
+                            + **converter**
+                            + **enums**
+                            + **id**
+                        + **exception**
+                        + **repository**
+                        + **security**
+                            + **jwt**
+                        + **service**
+                            + **impl**
+            + **generated-sources**
+            + **generated-test-sources**
+            + **maven-status**
+                + **maven-compiler-plugin**
+                    + **compile**
+                        + **default-compile**
+                    + **testCompile**
+                        + **default-testCompile**
+            + **surefire-reports**
+            + **test-classes**
+                + **com**
+                    + **ocr**
+                        + **security**
+                        + **service**
 ```

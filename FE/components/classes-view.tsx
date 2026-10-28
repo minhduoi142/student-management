@@ -218,6 +218,11 @@ function ClassesViewContent() {
       } else {
         const res = await catalogService.createLop(payload)
         toast.success(getSuccessMessage(res, "Tạo lớp học mới thành công."))
+        // Reset bộ lọc để lớp vừa thêm luôn xuất hiện ngay lập tức
+        setKeyword("")
+        setFacultyFilter("all")
+        setCohortFilter("all")
+        setPage(1)
       }
 
       setDialogOpen(false)
@@ -762,8 +767,8 @@ function ClassesViewContent() {
               <Field className="sm:col-span-2">
                 <FieldLabel htmlFor="class-advisor">Giảng viên cố vấn học tập</FieldLabel>
                 <Select
-                  value={formValues.maGVCoVan}
-                  onValueChange={(val) => setFormValues((curr) => ({ ...curr, maGVCoVan: val ?? "" }))}
+                  value={formValues.maGVCoVan || "NONE"}
+                  onValueChange={(val) => setFormValues((curr) => ({ ...curr, maGVCoVan: val === "NONE" ? "" : (val ?? "") }))}
                   disabled={submitting}
                 >
                   <SelectTrigger id="class-advisor" className="w-full">
@@ -771,7 +776,7 @@ function ClassesViewContent() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectItem value="">— Chưa phân công —</SelectItem>
+                      <SelectItem value="NONE">— Chưa phân công —</SelectItem>
                       {lecturers.map((l) => (
                         <SelectItem key={l.maGV} value={l.maGV}>
                           {l.maGV} · {l.hoTen} ({l.tenKhoa || l.maKhoa})

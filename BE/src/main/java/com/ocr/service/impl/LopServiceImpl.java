@@ -58,7 +58,10 @@ public class LopServiceImpl implements LopService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khoa với mã: " + request.maKhoa()));
 
         GiangVien coVan = null;
-        if (request.maGVCoVan() != null && !request.maGVCoVan().trim().isEmpty()) {
+        if (request.maGVCoVan() != null 
+                && !request.maGVCoVan().trim().isEmpty() 
+                && !"NONE".equalsIgnoreCase(request.maGVCoVan().trim())
+                && !"null".equalsIgnoreCase(request.maGVCoVan().trim())) {
             coVan = giangVienRepository.findById(request.maGVCoVan().trim())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giảng viên cố vấn với mã: " + request.maGVCoVan()));
         }
@@ -85,7 +88,10 @@ public class LopServiceImpl implements LopService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khoa với mã: " + request.maKhoa()));
 
         GiangVien coVan = null;
-        if (request.maGVCoVan() != null && !request.maGVCoVan().trim().isEmpty()) {
+        if (request.maGVCoVan() != null 
+                && !request.maGVCoVan().trim().isEmpty() 
+                && !"NONE".equalsIgnoreCase(request.maGVCoVan().trim())
+                && !"null".equalsIgnoreCase(request.maGVCoVan().trim())) {
             coVan = giangVienRepository.findById(request.maGVCoVan().trim())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giảng viên cố vấn với mã: " + request.maGVCoVan()));
         }

@@ -16,9 +16,10 @@ import { TeacherProfileView } from "@/components/teacher-profile-view"
 import { StudentPortalView } from "@/components/student-portal-view"
 import { StudentProfileView } from "@/components/student-profile-view"
 import { AdminProfileView } from "@/components/admin-profile-view"
+import { ClassesView } from "@/components/classes-view"
 import { authService, type LoginResponse } from "@/services"
 
-const catalogRoutes = new Set(["/lop", "/khoa", "/mon-hoc", "/giang-vien", "/hoc-ky"])
+const catalogRoutes = new Set(["/khoa", "/mon-hoc", "/giang-vien", "/hoc-ky"])
 
 const adminOnlyRoutes = new Set(["/diem", "/lop", "/khoa", "/giang-vien"])
 const studentRestrictedRoutes = new Set(["/diem", "/lop", "/khoa", "/giang-vien", "/sinh-vien", "/so-diem"])
@@ -153,10 +154,11 @@ export function AdminWorkspace() {
     if (activePath === "/ho-so") return <AdminProfileView onNavigate={navigateTo} />
     if (activePath === "/sinh-vien") return <StudentsView />
     if (activePath === "/diem") return <GradesView />
+    if (activePath === "/lop") return <ClassesView />
     if (catalogRoutes.has(activePath)) {
       return (
         <CatalogView
-          resource={activePath.slice(1) as "lop" | "khoa" | "mon-hoc" | "giang-vien" | "hoc-ky"}
+          resource={activePath.slice(1) as "khoa" | "mon-hoc" | "giang-vien" | "hoc-ky"}
         />
       )
     }
