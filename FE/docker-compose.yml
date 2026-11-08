@@ -7,11 +7,17 @@ services:
     restart: unless-stopped
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
+    env_file:
+      - .env
     environment:
       NODE_ENV: production
       PORT: 3000
-      # Mặc định trỏ ra BE chạy trên máy thật (host) qua cổng 8081
       BACKEND_URL: ${BACKEND_URL:-http://host.docker.internal:8081}
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    networks:
+      - qlsv-network
 
+networks:
+  qlsv-network:
+    external: true

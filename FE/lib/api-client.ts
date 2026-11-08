@@ -103,7 +103,7 @@ apiClient.interceptors.response.use(
             writable: true,
           })
         } catch {
-          ;(extracted as any)._message = message
+          ; (extracted as any)._message = message
         }
       }
 

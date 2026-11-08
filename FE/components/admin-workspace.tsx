@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { AppHeader } from "@/components/app-header"
 import { AppSidebar } from "@/components/app-sidebar"
 import { CatalogView } from "@/components/catalog-view"
+import { ClassesView } from "@/components/classes-view"
 import { DashboardView } from "@/components/dashboard-view"
 import { GradesView } from "@/components/grades-view"
 import { StudentsView } from "@/components/students-view"
@@ -151,6 +152,7 @@ export function AdminWorkspace() {
     // ==================== VAI TRÒ ADMIN (MẶC ĐỊNH) ====================
     if (activePath === "/sinh-vien") return <StudentsView />
     if (activePath === "/diem") return <GradesView />
+    if (activePath === "/lop") return <ClassesView />
     if (catalogRoutes.has(activePath)) {
       return (
         <CatalogView

@@ -793,6 +793,99 @@ export function CatalogView({ resource }: { resource: CatalogResource }) {
                       )}
                     </TableBody>
                   </Table>
+                ) : resource === "lop" ? (
+                  <Table className="min-w-[850px]">
+                    <TableHeader>
+                      <TableRow className="bg-muted/40 hover:bg-muted/40">
+                        <TableHead className="w-[140px]">Mã lớp</TableHead>
+                        <TableHead className="w-[280px]">Tên lớp học</TableHead>
+                        <TableHead className="w-[120px]">Khóa tuyển</TableHead>
+                        <TableHead className="w-[200px]">Khoa phụ trách</TableHead>
+                        <TableHead className="w-[200px]">Cố vấn học tập</TableHead>
+                        <TableHead className="w-[60px] text-right">Thao tác</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {loading ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-40 text-center">
+                            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                              <Loader2 className="size-5 animate-spin" />
+                              <span>Đang tải danh sách lớp học...</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : pageContent.length ? (
+                        pageContent.map((c: any) => {
+                          const khoaName = facultyNameByCode.get(c.maKhoa) || c.tenKhoa || c.maKhoa
+                          const gvName = lecturerNameByCode.get(c.maGVCoVan) || c.tenGVCoVan || (c.maGVCoVan ? c.maGVCoVan : "—")
+                          return (
+                            <TableRow key={c.maLop} className="hover:bg-muted/30">
+                              <TableCell>
+                                <Badge variant="outline" className="font-mono text-xs font-semibold">
+                                  {c.maLop}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-medium text-foreground">{c.tenLop}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" className="text-xs">
+                                  {c.khoaHoc || "—"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{khoaName}</TableCell>
+                              <TableCell>
+                                <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                                  <UserRound className="size-3.5 text-primary" />
+                                  <span>{gvName}</span>
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger
+                                    render={
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        aria-label={`Thao tác với lớp ${c.tenLop}`}
+                                      />
+                                    }
+                                  >
+                                    <MoreHorizontal />
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-44">
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedRecord(c)
+                                        setDialogOpen(true)
+                                      }}
+                                    >
+                                      <Pencil data-icon="inline-start" />
+                                      Chỉnh sửa lớp
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      variant="destructive"
+                                      onClick={() => setDeleteTarget(c)}
+                                    >
+                                      <Trash2 data-icon="inline-start" />
+                                      Xóa lớp học
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-40 text-center text-sm text-muted-foreground">
+                            Không tìm thấy lớp học nào phù hợp.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
                 ) : resource === "mon-hoc" ? (
                   <Table className="min-w-[850px]">
                     <TableHeader>
