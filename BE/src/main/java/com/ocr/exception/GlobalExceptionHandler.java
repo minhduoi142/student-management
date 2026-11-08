@@ -1,6 +1,7 @@
 package com.ocr.exception;
 
 import com.ocr.dto.response.ApiResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -44,10 +46,11 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Tên đăng nhập hoặc mật khẩu không chính xác."));
     }
 
-    @ExceptionHandler({DisabledException.class, LockedException.class})
+    @ExceptionHandler({ DisabledException.class, LockedException.class })
     public ResponseEntity<ApiResponse<Object>> handleAccountDisabledException(Exception ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error(ex.getMessage() != null ? ex.getMessage() : "Tài khoản của bạn đã bị khóa hoặc ngừng hoạt động."));
+                .body(ApiResponse.error(ex.getMessage() != null ? ex.getMessage()
+                        : "Tài khoản của bạn đã bị khóa hoặc ngừng hoạt động."));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
@@ -63,7 +66,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationExceptions(
+            MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
         for (FieldError error : ex.getBindingResult().getFieldErrors()) {
             errors.put(error.getField(), error.getDefaultMessage());
@@ -79,11 +83,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Object>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error("Không thể thực hiện thao tác do vi phạm ràng buộc dữ liệu hoặc đang có dữ liệu liên quan."));
+                .body(ApiResponse.error(
+                        "Không thể thực hiện thao tác do vi phạm ràng buộc dữ liệu hoặc đang có dữ liệu liên quan."));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGenericException(Exception ex) {
+        log.error("💥 [HỆ THỐNG] Ngoại lệ không mong muốn xảy ra: ", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("Đã xảy ra lỗi hệ thống: " + ex.getMessage()));
     }

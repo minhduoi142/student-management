@@ -236,8 +236,8 @@ INSERT INTO KETQUA (MaSV, MaMH, MaHK, DiemCC, DiemGK, DiemCK) VALUES
 --   123456   -> $2a$10$wK1k6YfR29M8rV5O1dYtNu6HkXzJgO/WnS5tG4aD3qG9i6b0.t7V6 (hoặc dùng admin123 cho tiện)
 INSERT INTO TAIKHOAN (Username, Password, Role, MaSV, MaGV, TrangThai) VALUES
 ('admin',      '$2a$10$TDDXAPoO2rsQc6FzJJW6/OxL9M24roJKYlyr800G5SC6vqUzwlvCO', 'ADMIN',     NULL,          NULL,   TRUE),
-('gv01',       '$2a$10$TDDXAPoO2rsQc6FzJJW6/OxL9M24roJKYlyr800G5SC6vqUzwlvCO', 'GIANGVIEN', NULL,          'GV01', TRUE),
-('b24dcce001', '$2a$10$TDDXAPoO2rsQc6FzJJW6/OxL9M24roJKYlyr800G5SC6vqUzwlvCO', 'SINHVIEN',  'B24DCCE001', NULL,   TRUE);
+('gv01',       '$2a$10$FsIfBEtjij7wuF8mgzyF1e7b5cFg0cjF3i8Ht7y..zuB88Xca.xtS', 'GIANGVIEN', NULL,          'GV01', TRUE),
+('b24dcce001', '$2a$10$FsIfBEtjij7wuF8mgzyF1e7b5cFg0cjF3i8Ht7y..zuB88Xca.xtS', 'SINHVIEN',  'B24DCCE001', NULL,   TRUE);
 
 -- 9. PHANCONG
 INSERT INTO PHANCONG (MaGV, MaMH, MaLop, MaHK) VALUES
