@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8081"
+
 const nextConfig = {
+  output: "standalone",
   images: {
     unoptimized: true,
   },
@@ -7,7 +10,7 @@ const nextConfig = {
     return [
       {
         source: "/api/v1/:path*",
-        destination: "http://localhost:8081/api/v1/:path*",
+        destination: `${BACKEND_URL}/api/v1/:path*`,
       },
     ]
   },

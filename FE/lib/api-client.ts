@@ -7,9 +7,11 @@ export interface ApiResponseEnvelope<T = any> {
   timestamp: string
 }
 
+const BACKEND_INTERNAL = process.env.BACKEND_URL || "http://localhost:8081"
+
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
-  (typeof window !== "undefined" ? "/api/v1" : "http://localhost:8081/api/v1")
+  (typeof window !== "undefined" ? "/api/v1" : `${BACKEND_INTERNAL}/api/v1`)
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -45,7 +47,7 @@ async function getAdminToken(): Promise<string | null> {
       const targetUrl =
         typeof window !== "undefined"
           ? "/api/v1/auth/login"
-          : "http://localhost:8081/api/v1/auth/login"
+          : `${BACKEND_INTERNAL}/api/v1/auth/login`
 
       const res = await axios.post(
         targetUrl,

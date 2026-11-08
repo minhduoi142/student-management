@@ -10,7 +10,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Tự động nạp biến môi trường từ file .env vào Spring Environment trước khi ứng dụng khởi chạy
+ * Tự động nạp biến môi trường từ file .env vào Spring Environment trước khi ứng dụng khởi chạy.
+ * Ưu tiên các biến môi trường thực tế của hệ điều hành/Docker container (System.getenv)
+ * trước khi nạp từ file .env.
  */
 public class DotenvEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
@@ -20,9 +22,12 @@ public class DotenvEnvironmentPostProcessor implements EnvironmentPostProcessor 
         Map<String, Object> envMap = new HashMap<>();
 
         dotenv.entries().forEach(entry -> {
-            envMap.put(entry.getKey(), entry.getValue());
-            if (System.getProperty(entry.getKey()) == null) {
-                System.setProperty(entry.getKey(), entry.getValue());
+            // Chỉ nạp từ .env nếu biến môi trường hệ thống chưa được set (giúp Docker/k8s ghi đè dễ dàng)
+            if (System.getenv(entry.getKey()) == null) {
+                envMap.put(entry.getKey(), entry.getValue());
+                if (System.getProperty(entry.getKey()) == null) {
+                    System.setProperty(entry.getKey(), entry.getValue());
+                }
             }
         });
 

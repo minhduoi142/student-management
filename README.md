@@ -95,7 +95,7 @@ Dự án sử dụng file `.env` để bảo mật thông tin kết nối và c�
    JWT_EXPIRATION_MS=86400000
    ```
 
-### Bước 3.3: Khởi chạy Backend
+### Bước 3.3: Khởi chạy Backend thủ công (Maven)
 ```bash
 cd BE
 mvn clean compile
@@ -106,6 +106,27 @@ Khi hiển thị log:
 Started Main in X.XXX seconds (process running for X.XXX)
 ```
 Backend đã sẵn sàng phục vụ tại: **http://localhost:8081**
+
+### Bước 3.4: Hoặc Khởi chạy Toàn Bộ Hệ Thống (MySQL + Backend + Frontend) bằng Docker Compose (Khuyên dùng)
+Nếu máy tính của bạn đã cài đặt Docker, bạn có thể khởi chạy toàn bộ Hệ thống (MySQL, Backend Spring Boot và Frontend Next.js) chỉ với **1 câu lệnh duy nhất** từ thư mục gốc:
+
+```bash
+# Khởi chạy toàn bộ hệ thống (MySQL + Backend + Frontend)
+docker compose up -d --build
+```
+
+> **Ghi chú khi dùng Docker Compose:**
+> - **MySQL** (`qlsv-mysql`): Tự động nạp `qlsv_schema.sql`, map port host **`3307`** (tránh xung đột với MySQL 3306 cục bộ).
+> - **Backend** (`qlsv-backend`): Chờ MySQL sẵn sàng qua healthcheck, chạy trên port **`8081`** (Swagger UI: `http://localhost:8081/swagger-ui/index.html`).
+> - **Frontend** (`qlsv-frontend`): Build Next.js 16 Standalone siêu nhẹ (~150MB), chạy trên port **`3000`** (`http://localhost:3000`), tự động rewrite API sang Backend trong Docker network.
+> - Xem log thời gian thực: `docker compose logs -f` (hoặc `docker compose logs -f frontend`)
+> - Tắt hệ thống: `docker compose down` (thêm `-v` nếu muốn reset sạch DB).
+
+*Nếu bạn chỉ muốn chạy riêng Backend + MySQL (FE chạy dev ngoài máy thật):*
+```bash
+cd BE
+docker compose up -d --build
+```
 
 ### Tài khoản đăng nhập mẫu:
 * **Quản trị viên (ADMIN)**: `admin` / `admin123`
@@ -130,6 +151,13 @@ npm install
 npm run dev
 ```
 Truy cập trình duyệt tại: **http://localhost:3000**
+
+### Bước 4.3: Hoặc Chạy Frontend cùng toàn bộ hệ thống bằng Docker
+```bash
+cd ..
+docker compose up -d --build
+```
+Container `qlsv-frontend` sẽ tự động build và chạy trên cổng **`http://localhost:3000`**.
 
 ---
 

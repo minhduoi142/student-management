@@ -95,7 +95,7 @@ Dự án sử dụng file `.env` để bảo mật thông tin kết nối và c�
    JWT_EXPIRATION_MS=86400000
    ```
 
-### Bước 3.3: Khởi chạy Backend
+### Bước 3.3: Khởi chạy Backend thủ công (Maven)
 ```bash
 cd BE
 mvn clean compile
@@ -106,6 +106,21 @@ Khi hiển thị log:
 Started Main in X.XXX seconds (process running for X.XXX)
 ```
 Backend đã sẵn sàng phục vụ tại: **http://localhost:8081**
+
+### Bước 3.4: Hoặc Khởi chạy Backend & MySQL bằng Docker Compose (Khuyên dùng)
+Nếu máy tính của bạn đã cài đặt Docker, bạn có thể khởi chạy toàn bộ Backend và cơ sở dữ liệu MySQL chỉ với 1 câu lệnh duy nhất:
+
+```bash
+# Chạy trực tiếp từ thư mục BE
+docker compose up -d --build
+```
+
+> **Ghi chú khi dùng Docker Compose:**
+> - MySQL container (`qlsv-mysql`) tự động mount và chạy `qlsv_schema.sql` để tạo database `qlsv`, 9 bảng và dữ liệu mẫu ban đầu.
+> - Cổng MySQL được map ra cổng host **`3307`** (tránh xung đột nếu máy bạn đã có sẵn MySQL chạy cổng 3306).
+> - Backend container (`qlsv-backend`) tự động kiểm tra MySQL đã sẵn sàng (`healthcheck`) trước khi khởi chạy trên cổng **`8081`**.
+> - Xem log thời gian thực của Backend: `docker compose logs -f backend`
+> - Tắt hệ thống: `docker compose down` (thêm `-v` nếu muốn xóa volume dữ liệu).
 
 ### Tài khoản đăng nhập mẫu:
 * **Quản trị viên (ADMIN)**: `admin` / `admin123`
