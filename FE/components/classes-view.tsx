@@ -32,7 +32,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { catalogService, statService } from "@/services"
+import { authService, catalogService, statService } from "@/services"
 import type { LopRequest, LopResponse, SiSoLopResponse } from "@/services/types"
 import { getErrorMessage, getSuccessMessage } from "@/lib/api-client"
 
@@ -59,6 +59,9 @@ function ClassesViewContent() {
   const searchParams = useSearchParams()
   const urlMaKhoa = searchParams?.get("maKhoa")
 
+  const [user, setUser] = useState(() => authService.getCurrentUser())
+  const isAdmin = user?.role === "ADMIN"
+
   const { faculties, lecturers, refreshCatalogs } = useAcademicData()
   const [classes, setClasses] = useState<LopResponse[]>([])
   const [classSizes, setClassSizes] = useState<SiSoLopResponse[]>([])
@@ -71,6 +74,10 @@ function ClassesViewContent() {
   const [cohortFilter, setCohortFilter] = useState("all")
   const [viewMode, setViewMode] = useState<"table" | "grid">("table")
   const [page, setPage] = useState(1)
+
+  useEffect(() => {
+    setUser(authService.getCurrentUser())
+  }, [])
 
   useEffect(() => {
     if (urlMaKhoa) {
@@ -103,8 +110,18 @@ function ClassesViewContent() {
         statService.getSiSoLop(),
       ])
 
-      if (classListRes.status === "fulfilled") setClasses(classListRes.value || [])
-      if (siSoRes.status === "fulfilled") setClassSizes(siSoRes.value || [])
+      if (classListRes.status === "fulfilled") {
+        const val = classListRes.value
+        setClasses(Array.isArray(val) ? val : [])
+      } else {
+        toast.error(getErrorMessage(classListRes.reason, "Không thể tải danh sách lớp học"))
+        setClasses([])
+      }
+
+      if (siSoRes.status === "fulfilled") {
+        const val = siSoRes.value
+        setClassSizes(Array.isArray(val) ? val : [])
+      }
 
       if (isManual) toast.success("Đã làm mới danh sách lớp học và sĩ số.")
     } catch (err) {
@@ -122,8 +139,8 @@ function ClassesViewContent() {
   // Extract unique cohorts
   const cohorts = useMemo(() => {
     const set = new Set<number>()
-    classes.forEach((c) => {
-      if (c.khoaHoc) set.add(c.khoaHoc)
+    ;(Array.isArray(classes) ? classes : []).forEach((c) => {
+      if (c && c.khoaHoc) set.add(c.khoaHoc)
     })
     return Array.from(set).sort((a, b) => b - a)
   }, [classes])
@@ -131,12 +148,13 @@ function ClassesViewContent() {
   // Filtered rows
   const filteredClasses = useMemo(() => {
     const q = keyword.trim().toLowerCase()
-    return classes.filter((item) => {
+    return (Array.isArray(classes) ? classes : []).filter((item) => {
+      if (!item) return false
       const gvName = lecturerMap.get(item.maGVCoVan ?? "") ?? item.tenGVCoVan ?? ""
       const matchesKeyword =
         !q ||
-        item.maLop.toLowerCase().includes(q) ||
-        item.tenLop.toLowerCase().includes(q) ||
+        (item.maLop || "").toLowerCase().includes(q) ||
+        (item.tenLop || "").toLowerCase().includes(q) ||
         gvName.toLowerCase().includes(q)
 
       const matchesFaculty = facultyFilter === "all" || item.maKhoa === facultyFilter
@@ -275,10 +293,12 @@ function ClassesViewContent() {
               <RefreshCw className={refreshing ? "animate-spin" : ""} data-icon="inline-start" />
               Làm mới
             </Button>
-            <Button type="button" onClick={() => openDialog(null)}>
-              <Plus data-icon="inline-start" />
-              Thêm lớp học
-            </Button>
+            {isAdmin && (
+              <Button type="button" onClick={() => openDialog(null)}>
+                <Plus data-icon="inline-start" />
+                Thêm lớp học
+              </Button>
+            )}
           </>
         }
       />
@@ -545,15 +565,19 @@ function ClassesViewContent() {
                                   <UsersRound data-icon="inline-start" />
                                   Xem danh sách sinh viên
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => openDialog(cls)}>
-                                  <Pencil data-icon="inline-start" />
-                                  Chỉnh sửa lớp
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(cls)}>
-                                  <Trash2 data-icon="inline-start" />
-                                  Xóa lớp học
-                                </DropdownMenuItem>
+                                {isAdmin && (
+                                  <>
+                                    <DropdownMenuItem onClick={() => openDialog(cls)}>
+                                      <Pencil data-icon="inline-start" />
+                                      Chỉnh sửa lớp
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(cls)}>
+                                      <Trash2 data-icon="inline-start" />
+                                      Xóa lớp học
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -628,25 +652,29 @@ function ClassesViewContent() {
                               <UsersRound className="mr-1 size-3.5" /> Xem sinh viên
                             </Button>
                             <div className="flex items-center gap-1">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                onClick={() => openDialog(cls)}
-                                title="Sửa"
-                              >
-                                <Pencil className="size-3.5" />
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                className="text-destructive"
-                                onClick={() => setDeleteTarget(cls)}
-                                title="Xóa"
-                              >
-                                <Trash2 className="size-3.5" />
-                              </Button>
+                              {isAdmin && (
+                                <>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    onClick={() => openDialog(cls)}
+                                    title="Sửa"
+                                  >
+                                    <Pencil className="size-3.5" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    className="text-destructive"
+                                    onClick={() => setDeleteTarget(cls)}
+                                    title="Xóa"
+                                  >
+                                    <Trash2 className="size-3.5" />
+                                  </Button>
+                                </>
+                              )}
                             </div>
                           </div>
                         </CardContent>

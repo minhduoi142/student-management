@@ -62,6 +62,7 @@ const teacherNavigationGroups: AppNavigationGroup[] = [
   {
     label: "Tra cứu học vụ",
     items: [
+      { label: "Lớp học", href: "/lop", icon: Layers3, description: "Danh sách lớp và cố vấn" },
       { label: "Danh sách sinh viên", href: "/sinh-vien", icon: UsersRound, description: "Tra cứu sinh viên theo lớp và khoa" },
       { label: "Môn học", href: "/mon-hoc", icon: BookOpen, description: "Chương trình đào tạo và số tín chỉ" },
       { label: "Học kỳ", href: "/hoc-ky", icon: CalendarDays, description: "Kế hoạch năm học và học kỳ" },

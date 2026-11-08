@@ -20,7 +20,7 @@ import { authService, type LoginResponse } from "@/services"
 
 const catalogRoutes = new Set(["/lop", "/khoa", "/mon-hoc", "/giang-vien", "/hoc-ky"])
 
-const adminOnlyRoutes = new Set(["/diem", "/lop", "/khoa", "/giang-vien"])
+const adminOnlyRoutes = new Set(["/diem", "/khoa", "/giang-vien"])
 const studentRestrictedRoutes = new Set(["/diem", "/lop", "/khoa", "/giang-vien", "/sinh-vien", "/so-diem"])
 
 export function AdminWorkspace() {
@@ -119,6 +119,9 @@ export function AdminWorkspace() {
       }
       if (activePath === "/sinh-vien") {
         return <StudentsView />
+      }
+      if (activePath === "/lop") {
+        return <ClassesView />
       }
       if (activePath === "/mon-hoc") {
         return <CatalogView resource="mon-hoc" />

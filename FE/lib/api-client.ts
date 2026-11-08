@@ -25,16 +25,39 @@ let cachedToken: string | null = null
 let isLoggingIn = false
 let loginPromise: Promise<string | null> | null = null
 
-// Helper to auto-login as admin (admin / admin123) if Spring Boot security requires JWT
-async function getAdminToken(): Promise<string | null> {
+export function getStoredToken(): string | null {
   if (cachedToken) return cachedToken
   if (typeof window !== "undefined") {
-    const stored = localStorage.getItem("qlsv_token")
+    const stored = localStorage.getItem("access_token") || localStorage.getItem("qlsv_token")
     if (stored) {
       cachedToken = stored
       return stored
     }
   }
+  return null
+}
+
+export function setStoredToken(token: string) {
+  cachedToken = token
+  if (typeof window !== "undefined") {
+    localStorage.setItem("access_token", token)
+    localStorage.setItem("qlsv_token", token)
+  }
+}
+
+export function clearStoredToken() {
+  cachedToken = null
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("access_token")
+    localStorage.removeItem("qlsv_token")
+    localStorage.removeItem("auth_user")
+  }
+}
+
+// Helper to auto-login as admin (admin / admin123) if Spring Boot security requires JWT
+async function getAdminToken(): Promise<string | null> {
+  const existing = getStoredToken()
+  if (existing) return existing
 
   if (isLoggingIn && loginPromise) {
     return loginPromise
@@ -56,10 +79,7 @@ async function getAdminToken(): Promise<string | null> {
       )
       const token = res.data?.data?.accessToken || res.data?.data?.token
       if (token) {
-        cachedToken = token
-        if (typeof window !== "undefined") {
-          localStorage.setItem("qlsv_token", token)
-        }
+        setStoredToken(token)
         return token
       }
     } catch {
@@ -75,7 +95,10 @@ async function getAdminToken(): Promise<string | null> {
 
 // Request interceptor: attach Bearer token if available
 apiClient.interceptors.request.use(async (config) => {
-  const token = await getAdminToken()
+  let token = getStoredToken()
+  if (!token) {
+    token = await getAdminToken()
+  }
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -115,10 +138,7 @@ apiClient.interceptors.response.use(
   async (error: AxiosError<any>) => {
     // If 401 Unauthorized, clear cached token so next request re-authenticates
     if (error.response?.status === 401) {
-      cachedToken = null
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("qlsv_token")
-      }
+      clearStoredToken()
     }
 
     const errorData = error.response?.data
