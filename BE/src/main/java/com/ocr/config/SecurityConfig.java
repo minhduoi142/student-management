@@ -61,7 +61,8 @@ public class SecurityConfig {
                                 "/api/v1/auth/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
-                                "/swagger-ui.html"
+                                "/swagger-ui.html",
+                                "/actuator/**"
                         ).permitAll()
                         // Static admin endpoints
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
