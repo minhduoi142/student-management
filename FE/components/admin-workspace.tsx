@@ -182,8 +182,8 @@ export function AdminWorkspace() {
     currentUser?.role === "GIANGVIEN"
       ? "Cổng Giảng viên"
       : currentUser?.role === "SINHVIEN"
-      ? "Cổng Sinh viên"
-      : "Quản trị đào tạo"
+        ? "Cổng Sinh viên"
+        : "Quản trị đào tạo"
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">

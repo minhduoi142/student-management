@@ -7,6 +7,11 @@
 # ------------------------------------------------------------------------------
 FROM maven:3.9.9-eclipse-temurin-21-alpine AS builder
 
+# Đảm bảo môi trường build Linux & Maven sử dụng UTF-8
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    MAVEN_OPTS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8"
+
 WORKDIR /build
 
 # Tận dụng Docker layer caching: copy pom.xml và pre-fetch dependencies trước
@@ -15,12 +20,17 @@ RUN mvn dependency:go-offline -B
 
 # Copy toàn bộ mã nguồn và đóng gói ứng dụng (bỏ qua unit tests để tối ưu tốc độ)
 COPY src ./src
-RUN mvn clean package -DskipTests -B
+RUN mvn clean package -DskipTests -B -Dfile.encoding=UTF-8
 
 # ------------------------------------------------------------------------------
 # Stage 2: Runtime image tối giản chỉ chứa JRE 21 (~150MB)
 # ------------------------------------------------------------------------------
 FROM eclipse-temurin:21-jre-alpine AS runner
+
+# Đảm bảo môi trường runtime Linux & JVM sử dụng UTF-8 chuẩn
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -Duser.language=vi -Duser.country=VN -Djava.security.egd=file:/dev/./urandom"
 
 WORKDIR /app
 
@@ -34,9 +44,5 @@ COPY --from=builder --chown=spring:spring /build/target/*.jar app.jar
 # Khai báo port mặc định của Backend
 EXPOSE 8081
 
-# Cấu hình biến môi trường JVM tối ưu hóa tài nguyên trong container
-ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
-
 # Khởi chạy ứng dụng
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
-

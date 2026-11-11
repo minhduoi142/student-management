@@ -18,6 +18,13 @@ DROP DATABASE IF EXISTS qlsv;
 CREATE DATABASE qlsv CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE qlsv;
 
+-- Thiết lập bộ mã ký tự UTF-8 (utf8mb4) cho client kết nối và session
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+SET character_set_connection = utf8mb4;
+SET character_set_client = utf8mb4;
+SET character_set_results = utf8mb4;
+
 -- ---------------------------------------------------------------------
 -- 1. KHOA (Quản lý các khoa đào tạo)
 -- ---------------------------------------------------------------------

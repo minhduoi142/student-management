@@ -139,9 +139,9 @@ function ClassesViewContent() {
   // Extract unique cohorts
   const cohorts = useMemo(() => {
     const set = new Set<number>()
-    ;(Array.isArray(classes) ? classes : []).forEach((c) => {
-      if (c && c.khoaHoc) set.add(c.khoaHoc)
-    })
+      ; (Array.isArray(classes) ? classes : []).forEach((c) => {
+        if (c && c.khoaHoc) set.add(c.khoaHoc)
+      })
     return Array.from(set).sort((a, b) => b - a)
   }, [classes])
 
