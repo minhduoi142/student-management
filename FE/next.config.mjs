@@ -12,6 +12,14 @@ const nextConfig = {
         source: "/api/v1/:path*",
         destination: `${BACKEND_URL}/api/v1/:path*`,
       },
+      {
+        source: "/oauth2/:path*",
+        destination: `${BACKEND_URL}/oauth2/:path*`,
+      },
+      {
+        source: "/login/oauth2/:path*",
+        destination: `${BACKEND_URL}/login/oauth2/:path*`,
+      },
     ]
   },
   async headers() {

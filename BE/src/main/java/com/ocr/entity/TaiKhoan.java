@@ -36,9 +36,9 @@ public class TaiKhoan {
     @Column(name = "Id")
     private Long id;
 
-    @Column(name = "Username", length = 50, nullable = false, unique = true)
+    @Column(name = "Username", length = 100, nullable = false, unique = true)
     @NotBlank(message = "Tên đăng nhập không được để trống")
-    @Size(max = 50, message = "Tên đăng nhập tối đa 50 ký tự")
+    @Size(max = 100, message = "Tên đăng nhập tối đa 100 ký tự")
     private String username;
 
     @Column(name = "Password", length = 255, nullable = false)
