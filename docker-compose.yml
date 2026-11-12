@@ -37,6 +37,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    env_file:
+      - ./BE/.env
     environment:
       SERVER_PORT: 8081
       DB_URL: jdbc:mysql://mysql:3306/qlsv?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
@@ -49,9 +51,6 @@ services:
       JPA_NAMING_STRATEGY: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
       JWT_SECRET: 9a4f2c8d3e71b5a6c4d8e2f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e5f7a9b1
       JWT_EXPIRATION_MS: 86400000
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
-      OAUTH2_REDIRECT_URI: ${OAUTH2_REDIRECT_URI:-http://localhost:3000/oauth2/redirect}
       LANG: C.UTF-8
       LC_ALL: C.UTF-8
     networks:
@@ -67,6 +66,8 @@ services:
       - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
       - backend
+    env_file:
+      - ./FE/.env
     environment:
       NODE_ENV: production
       PORT: 3000

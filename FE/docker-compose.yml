@@ -12,9 +12,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      BACKEND_URL: ${BACKEND_URL:-http://host.docker.internal:8081}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      BACKEND_URL: ${BACKEND_URL:-http://qlsv-backend:8081}
     networks:
       - qlsv-network
 
